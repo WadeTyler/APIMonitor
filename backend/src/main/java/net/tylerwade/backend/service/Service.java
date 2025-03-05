@@ -10,7 +10,7 @@ import java.util.UUID;
 public class Service {
 
     @Id
-    private String id = UUID.randomUUID().toString();
+    private String id = UUID.randomUUID().toString().toUpperCase() + "-" + UUID.randomUUID().toString().toUpperCase();
     private String userId;
     private String name;
 
