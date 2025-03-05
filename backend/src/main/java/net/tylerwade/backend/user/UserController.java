@@ -1,8 +1,8 @@
 package net.tylerwade.backend.user;
 
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import net.tylerwade.backend.dto.APIResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,17 +33,17 @@ public class UserController {
                         user.getLastName() == null ||
                         user.getLastName().isEmpty()
         ) {
-            return new ResponseEntity<>("All fields required.", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("All fields required."));
         }
 
         // Check email taken
         if (userService.existsByEmail(user.getEmail())) {
-            return new ResponseEntity<>("Email already in use.", HttpStatus.CONFLICT);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Email already taken."));
         }
 
         // Check password in between 10 to 50 char
         if (user.getPassword().length() < 6 || user.getPassword().length() > 50) {
-            return new ResponseEntity<>("Password must be between 6 and 50 characters.", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Password must be between 6 and 50 characters."));
         }
 
         // Encode password
@@ -58,12 +58,12 @@ public class UserController {
             // Add cookie
             response.addCookie(authTokenCookie);
         } catch (Exception e) {
-            return new ResponseEntity<>("Failed to create auth token.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error("Internal Server Error. Failed to create Auth Token"));
         }
 
         // return the new user after removing password
         user.setPassword(null);
-        return new ResponseEntity<>(user, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(APIResponse.success(user, "Signup Successful"));
     }
 
     @PostMapping("/login")
@@ -75,14 +75,14 @@ public class UserController {
                 || loginAttempt.getPassword() == null
                 || loginAttempt.getPassword().isEmpty()
         ) {
-         return new ResponseEntity<>("All fields required.", HttpStatus.BAD_REQUEST);
+         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("All fields required."));
         }
 
         // Find by email and validate
         User user = userService.attemptLogin(loginAttempt.getEmail(), loginAttempt.getPassword());
 
         if (user == null) {
-            return new ResponseEntity<>("Invalid email or password.", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Invalid email or password."));
         }
 
         // Attach authtoken
@@ -90,33 +90,29 @@ public class UserController {
             Cookie authToken = userService.createAuthTokenCookie(user.getId());
             response.addCookie(authToken);
         } catch (Exception e) {
-            return new ResponseEntity<>("Failed to create auth token.", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error("Failed to create Auth Token."));
         }
 
         // Return user
         user.setPassword(null);
-        return new ResponseEntity<>(user, HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(user, "Login Successful"));
     }
 
     @GetMapping({"/", ""})
     public ResponseEntity<?> getMe(@CookieValue(name = "auth_token") String authToken) {
-        if (authToken == null || authToken.isEmpty()) {
-            return new ResponseEntity<>("Auth token is required.", HttpStatus.BAD_REQUEST);
-        }
 
         User user = userService.getUserFromAuthToken(authToken);
         if (user == null) {
-            return new ResponseEntity<>("Invalid AuthToken", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized."));
         }
         // Return user
         user.setPassword(null);
-        return new ResponseEntity<>(user, HttpStatus.OK);
-
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(user, "User info retrieved successfully."));
     }
 
     @PutMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response, @CookieValue("auth_token") String authToken) {
         response.addCookie(userService.createLogoutCookie());
-        return new ResponseEntity<>("Logout successful.", HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Logout Successful"));
     }
 }

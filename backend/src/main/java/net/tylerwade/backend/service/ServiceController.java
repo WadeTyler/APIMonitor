@@ -1,11 +1,13 @@
 package net.tylerwade.backend.service;
 
+import net.tylerwade.backend.dto.APIResponse;
 import net.tylerwade.backend.user.User;
 import net.tylerwade.backend.user.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController @RequestMapping("/api/services")
@@ -25,24 +27,24 @@ public class ServiceController {
         User user = userService.getUserFromAuthToken(authToken);
         // Validate user
         if (user == null) {
-            return new ResponseEntity<>("Invalid AuthToken", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         service.setUserId(user.getId());
 
         // Validate name
         if (service.getName() == null || service.getName().isEmpty()) {
-            return new ResponseEntity<>("Service name is required.", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Service name required."));
         }
 
         if (serviceRepository.existsByNameAndUserIdIgnoreCase(service.getName(), service.getUserId())) {
-            return new ResponseEntity<>("You already have a service with the name: " + service.getName(), HttpStatus.CONFLICT);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("You already have a service with that name."));
         }
 
         // Save service
         serviceRepository.save(service);
 
-        return new ResponseEntity<>(service, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(APIResponse.success(service, "Service Created Successfully"));
     }
 
     @DeleteMapping("/{serviceId}")
@@ -50,34 +52,36 @@ public class ServiceController {
         // Validate auth token
         User user = userService.getUserFromAuthToken(authToken);
         if (user == null) {
-            return new ResponseEntity<>("Invalid AuthToken", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         // Check service exists
         Optional<Service> serviceOptional = serviceRepository.findById(serviceId);
         if (serviceOptional.isEmpty()) {
-            return new ResponseEntity<>("Service not found", HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error("Service not found."));
         }
 
         // Check if owner of service
         if (!serviceOptional.get().getUserId().equals(user.getId())) {
-            return new ResponseEntity<>("You do not have permission to delete this service", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         // Delete Service
         serviceRepository.deleteById(serviceId);
 
-        return new ResponseEntity<>("Service deleted", HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Service Deleted Successfully"));
     }
 
     @GetMapping({"/", ""})
     public ResponseEntity<?> getAllServices(@CookieValue("auth_token") String authToken) {
         User user = userService.getUserFromAuthToken(authToken);
         if (user == null) {
-            return new ResponseEntity<>("Invalid AuthToken", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
-        return new ResponseEntity<>(serviceRepository.findAllByUserId(user.getId()), HttpStatus.OK);
+        List<Service> services = serviceRepository.findAllByUserId(user.getId());
+
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(services, "Services Retrieved Successfully"));
     }
 
 }

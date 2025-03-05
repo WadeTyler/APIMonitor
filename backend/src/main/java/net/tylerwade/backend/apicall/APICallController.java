@@ -1,9 +1,11 @@
 package net.tylerwade.backend.apicall;
 
+import net.tylerwade.backend.dto.APIResponse;
 import net.tylerwade.backend.service.Service;
 import net.tylerwade.backend.service.ServiceRepository;
 import net.tylerwade.backend.user.User;
 import net.tylerwade.backend.user.UserService;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,33 +33,33 @@ public class APICallController {
 
         // Validate api call
         if (apiCall == null) {
-            return new ResponseEntity<>("APICall missing", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("API call missing"));
         }
         // Check serviceId
         if (apiCall.getServiceId() == null || apiCall.getServiceId().isEmpty()) {
-            return new ResponseEntity<>("Service id missing", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Service ID missing"));
         }
         // Check serviceId is legit
         if (!serviceRepository.existsById(apiCall.getServiceId())) {
-            return new ResponseEntity<>("Invalid ServiceID. Service not found.", HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error("Service Not Found"));
         }
         // Check path
         if (apiCall.getPath() == null || apiCall.getPath().isEmpty()) {
-            return new ResponseEntity<>("API call path missing", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("API call path missing"));
         }
         // Check method
         if (apiCall.getMethod() == null || apiCall.getMethod().isEmpty()) {
-            return new ResponseEntity<>("API call method missing", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("API call method missing"));
         }
         // Check Timestamp
         if (apiCall.getTimestamp() == null) {
-            return new ResponseEntity<>("API call timestamp missing", HttpStatus.BAD_REQUEST);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("API call timestamp missing"));
         }
 
         // Save API Call
         apiCallRepository.save(apiCall);
 
-        return new ResponseEntity<>(apiCall, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(apiCall, "API Call added successfully"));
     }
 
     @GetMapping({"/", ""})
@@ -70,20 +72,20 @@ public class APICallController {
         // Validate user
         User user = userService.getUserFromAuthToken(authToken);
         if (user == null) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         // Check if service found
         Optional<Service> serviceOptional = serviceRepository.findById(serviceId);
         if (!serviceOptional.isPresent()) {
-            return new ResponseEntity<>("Service not found", HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error("Service not found"));
         }
 
         Service service = serviceOptional.get();
 
         // Check if owner of service
         if (!service.getUserId().equals(user.getId())) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         List<APICall> apiCalls = apiCallRepository.findAllByServiceId(serviceId);
@@ -104,7 +106,7 @@ public class APICallController {
                     .collect(Collectors.toList());
         }
 
-        return new ResponseEntity<>(apiCalls, HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(apiCalls, "API Calls retrieved successfully."));
     }
 
     @DeleteMapping("/{id}")
@@ -115,37 +117,37 @@ public class APICallController {
         // Validate User
         User user = userService.getUserFromAuthToken(authToken);
         if (user == null) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         // Verify service exists
         Optional<Service> serviceOptional = serviceRepository.findById(serviceId);
         if (serviceOptional.isEmpty()) {
-            return new ResponseEntity<>("Service not found", HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error("Service not found."));
         }
 
         Service service = serviceOptional.get();
 
         // Verify owner of service
         if (!service.getUserId().equals(user.getId())) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         // Verify API Call exists and is in service
         Optional<APICall> apiCallOptional = apiCallRepository.findById(id);
         if (apiCallOptional.isEmpty()) {
-            return new ResponseEntity<>("API call not found", HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error("API Call not found."));
         }
 
         // Verify API Call is in service
         if (!apiCallOptional.get().getServiceId().equals(serviceId)) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         // Delete the api call
         apiCallRepository.delete(apiCallOptional.get());
 
-        return new ResponseEntity<>("API Call deleted.", HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "API Call Deleted."));
     }
 
     @DeleteMapping({"/", ""})
@@ -156,25 +158,25 @@ public class APICallController {
         // Validate user
         User user = userService.getUserFromAuthToken(authToken);
         if (user == null) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         Optional<Service> serviceOptional = serviceRepository.findById(serviceId);
         // Verify service exists
         if (serviceOptional.isEmpty()) {
-            return new ResponseEntity<>("Service not found", HttpStatus.NOT_FOUND);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error("Service not found."));
         }
 
         Service service = serviceOptional.get();
         // Verify owner of service
         if (!service.getUserId().equals(user.getId())) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
         }
 
         // Delete all api calls in service
         apiCallRepository.deleteAllByServiceId(serviceId);
 
-        return new ResponseEntity<>("All API Calls in service deleted.", HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "All API Calls in service deleted successfully."));
     }
 
 }
