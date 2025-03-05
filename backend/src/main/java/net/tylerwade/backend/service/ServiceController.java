@@ -25,7 +25,7 @@ public class ServiceController {
         User user = userService.getUserFromAuthToken(authToken);
         // Validate user
         if (user == null) {
-            return new ResponseEntity<>("Invalid AuthToken", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Invalid AuthToken", HttpStatus.UNAUTHORIZED);
         }
 
         service.setUserId(user.getId());
@@ -61,7 +61,7 @@ public class ServiceController {
 
         // Check if owner of service
         if (!serviceOptional.get().getUserId().equals(user.getId())) {
-            return new ResponseEntity<>("You do not have permission to delete this service", HttpStatus.FORBIDDEN);
+            return new ResponseEntity<>("You do not have permission to delete this service", HttpStatus.UNAUTHORIZED);
         }
 
         // Delete Service
