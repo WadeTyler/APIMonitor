@@ -41,7 +41,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Email already taken."));
         }
 
-        // Check password in between 10 to 50 char
+        // Check password in between 10 and 50 char
         if (user.getPassword().length() < 6 || user.getPassword().length() > 50) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Password must be between 6 and 50 characters."));
         }
