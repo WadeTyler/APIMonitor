@@ -1,0 +1,55 @@
+<div class="fixed top-0 left-0 w-full h-12 flex gap-4 items-center justify-between p-2 px-16 bg-prim-dark text-background shadow-xl z-40">
+
+  <!-- Left Side -->
+  <div class="flex items-center gap-4">
+    <a routerLink="/" ><h1 class="font-semibold text-xl border-r pr-4 cursor-pointer hover:text-prim-light">API-Monitor</h1></a>
+
+    <a routerLink="/dashboard" class="relative flex items-center justify-center cursor-pointer">
+      <i-tabler name="category-2" class="hover:text-prim-light"></i-tabler>
+    </a>
+
+    <a routerLink="/docs/getting-started" class="cursor-pointer hover:text-prim-light">Getting Started</a>
+    <a routerLink="/docs" class="cursor-pointer hover:text-prim-light">Docs</a>
+  </div>
+
+  <!-- Right Side -->
+  <div class="flex items-center gap-4">
+
+    @if (this.userService.authUser) {
+      <div
+        class="relative flex items-center justify-center "
+      >
+        <div (click)="toggleUserPanel()" class="cursor-pointer bg-white text-prim  hover:bg-prim hover:text-white p-1 rounded-full shadow-none flex items-center justify-center">
+          <i-tabler name="user-filled"></i-tabler>
+        </div>
+
+
+        @if (this.showUserPanel) {
+          <div class="bg-white absolute left-1/2 top-full -translate-x-1/2 rounded flex flex-col p-2 text-foreground">
+
+            <button class="inline-flex gap-2 hover:bg-prim hover:text-white duration-300 p-2 rounded cursor-pointer" (click)="handleLogoutButton()" [disabled]="this.userService.isLoggingOut">
+              @if (!this.userService.isLoggingOut) {
+                <i-tabler name="logout"></i-tabler>
+                <span>Logout</span>
+              } @else {
+                <loading-small></loading-small>
+              }
+            </button>
+
+          </div>
+        }
+
+      </div>
+    } @else {
+      <a routerLink="/login" class="cursor-pointer hover:text-prim-light">Login</a>
+      <a routerLink="/signup"><button class="submit-btn">Sign Up</button></a>
+    }
+
+
+
+
+  </div>
+
+
+
+</div>

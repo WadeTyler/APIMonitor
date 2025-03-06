@@ -1,0 +1,47 @@
+<div class="w-full h-screen flex flex-col items-center justify-center page-padding">
+
+  <form
+    class="max-w-96 w-full flex flex-col bg-bg-light rounded items-center justify-center p-4 shadow-lg gap-4"
+    [formGroup]="signupForm"
+    (ngSubmit)="handleSubmitSignupForm()"
+  >
+    <h2 class="text-center text-prim text-3xl">Signup</h2>
+    <p class="italic text-sm">Starting monitoring your APIs in minutes!</p>
+    <hr class="border w-full">
+
+    <div class="input-container">
+      <label for="email" class="input-label">EMAIL:</label>
+      <input formControlName="email" id="email" type="email" class="input-bar" placeholder="Email" required maxlength="100" />
+    </div>
+
+    <div class="input-container">
+      <label for="firstName" class="input-label">FIRST NAME:</label>
+      <input formControlName="firstName" id="firstName" type="text" class="input-bar" placeholder="First Name" required maxlength="50"/>
+    </div>
+
+    <div class="input-container">
+      <label for="lastName" class="input-label">LAST NAME:</label>
+      <input formControlName="lastName" id="lastName" type="text" class="input-bar" placeholder="Last Name" required maxlength="50" />
+    </div>
+
+    <div class="input-container">
+      <label for="password" class="input-label">PASSWORD:</label>
+      <input formControlName="password" id="password" type="password" class="input-bar" placeholder="Password" required maxlength="50" minlength="6" />
+    </div>
+    <a routerLink="/login">Already have an account? <span class="text-prim-light">Login</span></a>
+
+
+    @if (userService.signupError) {
+      <p class="text-sm text-red-500 italic">{{ userService.signupError }}</p>
+    }
+
+    @if (!userService.isSigningUp) {
+      <button class="submit-btn" [disabled]="userService.isSigningUp">Signup Now</button>
+    } @else {
+      <loading-medium/>
+    }
+  </form>
+
+<!-- TODO: Add Right side of signup page -->
+
+</div>
