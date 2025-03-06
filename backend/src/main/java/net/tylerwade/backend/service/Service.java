@@ -6,11 +6,13 @@ import jakarta.persistence.Table;
 
 import java.util.UUID;
 
-@Entity @Table(name  = "services")
+@Entity
+@Table(name = "services")
 public class Service {
 
     @Id
     private String id = UUID.randomUUID().toString().toUpperCase() + "-" + UUID.randomUUID().toString().toUpperCase();
+    private String publicToken = UUID.randomUUID().toString().toLowerCase();
     private String userId;
     private String name;
 
@@ -44,5 +46,13 @@ public class Service {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPublicToken() {
+        return publicToken;
+    }
+
+    public void setPublicToken(String publicToken) {
+        this.publicToken = publicToken;
     }
 }

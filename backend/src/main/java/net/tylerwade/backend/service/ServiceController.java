@@ -47,7 +47,37 @@ public class ServiceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(APIResponse.success(service, "Service Created Successfully"));
     }
 
-    @DeleteMapping("/{serviceId}")
+    @GetMapping("/{publicToken}")
+    public ResponseEntity<?> getServiceFromPublicToken(@CookieValue("auth_token") String authToken, @PathVariable String publicToken) {
+        User user = userService.getUserFromAuthToken(authToken);
+        // Validate user
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
+        }
+
+        // Check for public token
+        if (publicToken == null || publicToken.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error("Public Token missed"));
+        }
+
+        // Search for service
+        Optional<Service> serviceOptional = serviceRepository.findByPublicToken(publicToken);
+        if (serviceOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error("Service not Found"));
+        }
+
+        Service service = serviceOptional.get();
+
+        // Check if owner of service
+        if (!service.getUserId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error("Unauthorized"));
+        }
+
+        // Return the service
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(service, "Service Retrieved Successfully"));
+    }
+
+    @DeleteMapping("/delete/{serviceId}")
     public ResponseEntity<?> deleteService(@PathVariable String serviceId, @CookieValue("auth_token") String authToken) {
         // Validate auth token
         User user = userService.getUserFromAuthToken(authToken);
