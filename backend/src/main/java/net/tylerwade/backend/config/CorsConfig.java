@@ -11,7 +11,7 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins("http://localhost:4200")
-                .allowedHeaders("Content-Type", "serviceId")
+                .allowedHeaders("Content-Type", "appId")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowCredentials(true)  // Enable credentials
                 .maxAge(3600);  // Cache preflight request results for 1 hour

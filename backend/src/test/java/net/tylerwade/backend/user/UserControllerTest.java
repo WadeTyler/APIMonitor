@@ -2,6 +2,10 @@ package net.tylerwade.backend.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
+import net.tylerwade.backend.controller.UserController;
+import net.tylerwade.backend.entity.User;
+import net.tylerwade.backend.repository.UserRepository;
+import net.tylerwade.backend.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,7 +138,7 @@ public class UserControllerTest {
 
     @Test
     void shouldReturnUserIfAuthTokenExists() throws Exception {
-        when(userService.getUserFromAuthToken(any())).thenReturn(validUser);
+        when(userService.findUserByAuthToken(any())).thenReturn(validUser);
 
         Cookie authToken = new Cookie("auth_token", "fake_token");
 
