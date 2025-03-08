@@ -12,6 +12,7 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,14 +42,33 @@ public class APICallController {
     }
 
     @GetMapping({"/", ""})
-    public ResponseEntity<?> getApplicationAPICalls(@RequestHeader("appId") String appId, @CookieValue("auth_token") String authToken, @RequestParam(defaultValue = "0", required = false) int pageNumber, @RequestParam(defaultValue = "50", required = false) int pageSize) {
+    public ResponseEntity<?> getApplicationAPICalls(
+            @RequestHeader("appId") String appId,
+            @CookieValue("auth_token") String authToken,
+            // Params
+            @RequestParam(defaultValue = "0", required = false) int pageNumber,
+            @RequestParam(defaultValue = "50", required = false) int pageSize,
+            @RequestParam(defaultValue = "", required = false) String sortBy,
+            @RequestParam(defaultValue = "DESC", required = false) String direction,
+            Sort sort) {
         try {
             User user = userService.getUser(authToken);
-            Pageable pageable = PageRequest.of(pageNumber, pageSize);
+
+            // Construct pageable
+            PageRequest pageRequest;
+            if (sortBy.isEmpty()) {
+                pageRequest = PageRequest.of(pageNumber, pageSize);
+            } else if (!sortBy.isEmpty() && direction.equalsIgnoreCase("DESC")) {
+                pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).descending());
+            } else {
+                pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by(sortBy).ascending());
+            }
+
+            Pageable pageable = pageRequest;
+
             Page<APICall> apiCalls = apiCallService.getApplicationAPICalls(appId, user.getId(), pageable);
 
             return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(apiCalls, "API Calls Retrieved."));
-
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
         } catch (NotFoundException e) {
