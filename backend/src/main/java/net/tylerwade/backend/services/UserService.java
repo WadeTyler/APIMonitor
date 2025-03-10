@@ -23,11 +23,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final String authSecret;
+    private final String environment;
 
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret) {
+    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authSecret = authSecret;
+        this.environment = environment;
     }
 
     private String encodePassword(String password) {
@@ -39,7 +41,7 @@ public class UserService {
 
         Cookie cookie = new Cookie("auth_token", authToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(environment.equals("production"));
         cookie.setPath("/");
         cookie.setMaxAge(60 * 60 * 24); // 24 hours
 
@@ -49,7 +51,7 @@ public class UserService {
     public Cookie createLogoutCookie() {
         Cookie cookie = new Cookie("auth_token", "");
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(environment.equals("production"));
         cookie.setPath("/");
         cookie.setMaxAge(0);
         return cookie;
