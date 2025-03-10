@@ -5,7 +5,14 @@ import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {fetchApplications} from "@/lib/util/ApplicationUtil";
 import {fetchAuthUser} from "@/lib/util/AuthUtil";
 import Loader from "@/components/util/Loader";
-import {RiPencilLine, RiResetRightLine} from "@remixicon/react";
+import {
+  RiAppStoreLine,
+  RiLinksLine,
+  RiPencilLine,
+  RiResetRightLine,
+  RiRouteLine,
+  RiSignalTowerLine
+} from "@remixicon/react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
 
@@ -69,21 +76,27 @@ const Page = () => {
               <table className="table-auto w-full">
                 <thead className="">
                 <tr className="">
-                  <th className="p-4 text-left rounded-tl-md bg-gray-50 border-b-gray-200 border-b">Name</th>
-                  <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">Application ID</th>
-                  <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">Public Token</th>
-                  <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">Total Calls</th>
-                  <th className="p-4 text-left rounded-tr-md bg-gray-50 border-b-gray-200 border-b">Unique Addresses</th>
+                  <th className="p-4 text-left rounded-tl-md bg-gray-50 border-b-gray-200 border-b">
+                    <span className="inline-flex gap-1"><RiAppStoreLine/> Name</span>
+                  </th>
+                  <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">
+                    <span className="inline-flex gap-1"><RiSignalTowerLine /> Total Calls</span>
+                  </th>
+                  <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">
+                    <span className="inline-flex gap-1"><RiRouteLine /> Total Paths</span>
+                  </th>
+                  <th className="p-4 text-left rounded-tr-md bg-gray-50 border-b-gray-200 border-b">
+                    <span className="inline-flex gap-1"><RiLinksLine /> Total Addresses</span>
+                  </th>
                 </tr>
                 </thead>
                 <tbody>
                 {applications.map((application) => (
                   <tr key={application.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigateToApplication(application.publicToken)}>
                     <td className="p-4 text-left border-b-gray-200 border-b">{application.name}</td>
-                    <td className="p-4 text-left border-b-gray-200 border-b">{application.id}</td>
-                    <td className="p-4 text-left border-b-gray-200 border-b">{application.publicToken}</td>
-                    <td className="p-4 text-left border-b-gray-200 border-b">100 (HC)</td>
-                    <td className="p-4 text-left border-b-gray-200 border-b">50 (HC)</td>
+                    <td className="p-4 text-left border-b-gray-200 border-b">{application.totalAPICalls}</td>
+                    <td className="p-4 text-left border-b-gray-200 border-b">{application.uniquePaths.length}</td>
+                    <td className="p-4 text-left border-b-gray-200 border-b">{application.totalUniqueRemoteAddr}</td>
                   </tr>
                 ))}
                 </tbody>

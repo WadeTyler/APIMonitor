@@ -22,7 +22,7 @@ const Navbar = () => {
   })
 
   return (
-    <div className="fixed top-0 left-0 w-full h-16 bg-dark px-8 py-2 flex items-center justify-between relative">
+    <div className="fixed top-0 left-0 w-full h-16 bg-dark px-8 py-2 flex items-center justify-between z-50">
 
       {/* Brand */}
       <Link href="/" className="inline-flex items-center gap-2 text-xl font-semibold text-light">

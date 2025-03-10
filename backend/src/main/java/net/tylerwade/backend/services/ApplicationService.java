@@ -1,14 +1,20 @@
 package net.tylerwade.backend.services;
 
+import net.tylerwade.backend.dto.ApplicationDTO;
 import net.tylerwade.backend.dto.CreateApplicationRequest;
+import net.tylerwade.backend.dto.MethodCount;
 import net.tylerwade.backend.entity.Application;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
+import net.tylerwade.backend.repository.APICallRepository;
 import net.tylerwade.backend.repository.ApplicationRepository;
 import org.apache.coyote.BadRequestException;
+import org.hibernate.mapping.Array;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,9 +22,11 @@ import java.util.Optional;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
+    private final APICallRepository apiCallRepository;
 
-    public ApplicationService(ApplicationRepository applicationRepository) {
+    public ApplicationService(ApplicationRepository applicationRepository, APICallRepository apiCallRepository) {
         this.applicationRepository = applicationRepository;
+        this.apiCallRepository = apiCallRepository;
     }
 
     public Application createApplication(CreateApplicationRequest createApplicationRequest, String userId) throws BadRequestException, NotAcceptableException {
@@ -86,6 +94,44 @@ public class ApplicationService {
 
     public List<Application> getAllApplications(String userId) {
         return applicationRepository.findAllByUserId(userId);
+    }
+
+    public Long getTotalAPICalls(String appId) {
+        return apiCallRepository.countDistinctAPICallByAppId(appId);
+    }
+
+    public Long getTotalUniqueRemoteAddr(String appId) {
+        return apiCallRepository.countDistinctAPICallByRemoteAddressAndAppIdEquals(appId);
+    }
+
+    public String[] getUniquePaths(String appId) {
+        return apiCallRepository.findDistinctPathByAppId(appId);
+    }
+
+    public MethodCount[] getMethodCounts(String appId) {
+        // Get Distinct methods.
+        String[] methods = apiCallRepository.findDistinctMethodByAppId(appId);
+
+        // Get Counts
+        List<MethodCount> methodCounts = new ArrayList<>();
+        for (String method : methods) {
+            methodCounts.add(new MethodCount(method, apiCallRepository.countMethodByAndAppIdEquals(method, appId)));
+        }
+
+        return methodCounts.toArray(new MethodCount[methodCounts.size()]);
+    }
+
+    public ApplicationDTO convertApplicationToDTO(Application application) {
+        return new ApplicationDTO(
+                application.getId(),
+                application.getPublicToken(),
+                application.getName(),
+                application.getUserId(),
+                getTotalAPICalls(application.getId()),
+                getTotalUniqueRemoteAddr(application.getId()),
+                getUniquePaths(application.getId()),
+                getMethodCounts(application.getId())
+        );
     }
 
     public Application findApplicationById(String appId) throws NotFoundException {

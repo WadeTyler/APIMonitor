@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import QueryProvider from "@/components/providers/QueryProvider";
 import LoadQueries from "@/components/providers/LoadQueries";
 import Footer from "@/components/Footer";
+import {Toaster} from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,9 +35,10 @@ export default function RootLayout({
     >
     <QueryProvider>
       <LoadQueries />
+      <Toaster />
       <Navbar/>
       {children}
-      <Footer />
+      {/*<Footer />*/}
     </QueryProvider>
     </body>
     </html>

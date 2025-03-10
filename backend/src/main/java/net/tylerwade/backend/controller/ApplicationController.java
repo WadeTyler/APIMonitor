@@ -1,6 +1,7 @@
 package net.tylerwade.backend.controller;
 
 import net.tylerwade.backend.dto.APIResponse;
+import net.tylerwade.backend.dto.ApplicationDTO;
 import net.tylerwade.backend.dto.CreateApplicationRequest;
 import net.tylerwade.backend.entity.Application;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController @RequestMapping("/api/applications")
@@ -47,7 +49,11 @@ public class ApplicationController {
         try {
             User user = userService.getUser(authToken);
             Application application = applicationService.getApplicationFromPublicToken(publicToken, user.getId());
-            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(application, "Application Retrieved."));
+
+            // Convert to DTO
+            ApplicationDTO applicationDTO = applicationService.convertApplicationToDTO(application);
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(applicationDTO, "Application Retrieved."));
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
         } catch (NotFoundException e) {
@@ -79,7 +85,14 @@ public class ApplicationController {
             User user = userService.getUser(authToken);
             List<Application> applications = applicationService.getAllApplications(user.getId());
 
-            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(applications, "User applications received successfully."));
+            // Convert to DTOs
+            List<ApplicationDTO> applicationDTOs = new ArrayList<>();
+
+            for (Application application : applications) {
+                applicationDTOs.add(applicationService.convertApplicationToDTO(application));
+            }
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(applicationDTOs, "User applications received successfully."));
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
         }

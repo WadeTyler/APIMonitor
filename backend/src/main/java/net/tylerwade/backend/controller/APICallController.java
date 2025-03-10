@@ -48,9 +48,10 @@ public class APICallController {
             // Params
             @RequestParam(defaultValue = "0", required = false) int pageNumber,
             @RequestParam(defaultValue = "50", required = false) int pageSize,
-            @RequestParam(defaultValue = "", required = false) String sortBy,
+            @RequestParam(defaultValue = "timestamp", required = false) String sortBy,
             @RequestParam(defaultValue = "DESC", required = false) String direction,
-            Sort sort) {
+            @RequestParam(required = false) String search
+            ) {
         try {
             User user = userService.getUser(authToken);
 
@@ -66,7 +67,7 @@ public class APICallController {
 
             Pageable pageable = pageRequest;
 
-            Page<APICall> apiCalls = apiCallService.getApplicationAPICalls(appId, user.getId(), pageable);
+            Page<APICall> apiCalls = apiCallService.getApplicationAPICalls(appId, user.getId(), pageable, search);
 
             return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(apiCalls, "API Calls Retrieved."));
         } catch (UnauthorizedException e) {

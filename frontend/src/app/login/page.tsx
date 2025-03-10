@@ -64,7 +64,7 @@ const Page = () => {
             <p className="text-danger">{(error as Error).message}</p>
           )}
 
-          <button className={`submit-btn2 ${isPending && 'bg-dark!'}`} disabled={isPending}>
+          <button className={`submit-btn2 ${isPending && 'cursor-not-allowed! bg-primary-dark!'}`} disabled={isPending}>
             <RiLoginCircleLine/>
             Login
           </button>

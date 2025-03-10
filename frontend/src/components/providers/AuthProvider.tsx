@@ -14,7 +14,8 @@ const AuthProvider = ({children}: {
 
   const {data: authUser, isPending: loadingAuth} = useQuery<User | undefined | null>({
     queryKey: ['authUser'],
-    queryFn: fetchAuthUser
+    queryFn: fetchAuthUser,
+    retry: false
   });
 
   useEffect(() => {

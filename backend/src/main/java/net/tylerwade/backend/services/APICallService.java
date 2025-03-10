@@ -6,6 +6,7 @@ import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.repository.APICallRepository;
 import net.tylerwade.backend.repository.ApplicationRepository;
+import net.tylerwade.backend.util.MathUtil;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,7 +57,7 @@ public class APICallService {
         return apiCall;
     }
 
-    public Page<APICall> getApplicationAPICalls(String appId, String userId, Pageable pageable) throws NotFoundException, BadRequestException, UnauthorizedException {
+    public Page<APICall> getApplicationAPICalls(String appId, String userId, Pageable pageable, String search) throws NotFoundException, BadRequestException, UnauthorizedException {
         // Check fields
         if (appId == null || appId.isEmpty() || userId == null || userId.isEmpty() || pageable == null) {
             throw new BadRequestException("All fields required. (appId, userId, pageRequest)");
@@ -64,7 +65,17 @@ public class APICallService {
 
         applicationService.findApplicationAndVerifyUser(appId, userId);
 
-        return apiCallRepository.findAllByAppId(appId, pageable);
+        if (search != null && MathUtil.isInteger(search)) {
+            // Search through path/method/responseStatus
+            return apiCallRepository.findAllByAppIdAndPathContainingIgnoreCaseOrMethodContainingIgnoreCaseOrResponseStatusEquals(appId, search, search, Integer.parseInt(search), pageable);
+
+        } else if (search != null) {
+            // Search through path/method
+            return apiCallRepository.findAllByAppIdAndPathContainingIgnoreCaseOrMethodContainingIgnoreCase(appId, search, search, pageable);
+        } else {
+            // No Search
+            return apiCallRepository.findAllByAppId(appId, pageable);
+        }
     }
 
     public void deleteAPICall(Long apiCallId, String userId) throws BadRequestException, NotFoundException, UnauthorizedException {
@@ -100,5 +111,7 @@ public class APICallService {
         // Delete all api calls in app
         apiCallRepository.deleteAllByAppId(appId);
     }
+
+
 
 }
