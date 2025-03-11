@@ -100,14 +100,22 @@ const ApplicationInfoBar = ({currentApplication, searchForValue}: {
 
       <div className="flex flex-col gap-1">
         <section className="inline-flex gap-2 font-semibold items-center">
-          <RiInputMethodLine />
+          <RiInputMethodLine/>
           <span className="text-secondary">Method Counts:</span>
           <span className="text-foreground">{currentApplication.methodCounts?.length}</span>
         </section>
 
         {currentApplication.methodCounts?.map((methodCount) => (
-          <section key={methodCount.method} className="inline-flex gap-2 font-semibold items-center text-xs">
-            <span className="text-secondary">{methodCount.method}</span>
+          <section
+            key={methodCount.method}
+            className="inline-flex gap-2 font-semibold items-center text-xs"
+          >
+            <span
+              className="text-secondary hover:text-primary hover:underline duration-200 cursor-pointer"
+              onClick={() => searchForValue(methodCount.method)}
+            >
+              {methodCount.method}
+            </span>
             <span className="text-foreground">{methodCount.count}</span>
           </section>
         ))}
