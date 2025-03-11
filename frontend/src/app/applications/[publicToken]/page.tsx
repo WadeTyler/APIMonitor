@@ -1,20 +1,22 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {useParams} from "next/navigation";
 import AuthProvider from "@/components/providers/AuthProvider";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {fetchApplicationFromPublicToken} from "@/lib/util/ApplicationUtil";
 import {
-  RiResetRightLine, RiSearchLine,
+  RiResetRightLine, RiSearchLine, RiSortAsc, RiSortDesc,
 } from "@remixicon/react";
 import ApplicationInfoBar from "@/components/ApplicationInfoBar";
 import NotFound from "@/app/not-found";
-import {APICall} from "@/types/APICallTypes";
+import {APICall, ValidDirections, ValidSorts} from "@/types/APICallTypes";
 import {fetchApplicationAPICalls} from "@/lib/util/APICallUtil";
 import PageType from "@/types/PageTypes";
 import APICallRow from "@/components/APICallRow";
 import Pagination from "@/components/Pagination";
+import {debounce} from "next/dist/server/utils";
+import toast from "react-hot-toast";
 
 
 const Page = () => {
@@ -26,6 +28,8 @@ const Page = () => {
   const [pageSize, setPageSize] = useState<number>(50);
   const [currentPageNum, setCurrentPageNum] = useState<number>(0);
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<ValidSorts>('timestamp');
+  const [direction, setDirection] = useState<ValidDirections>("DESC");
 
   // QueryClient
   const queryClient = useQueryClient();
@@ -48,21 +52,47 @@ const Page = () => {
   }, [currentApplication, pageSize, currentPageNum]);
 
   // Functions
-  async function refreshAPICalls() {
-    if (currentApplication) {
-      const newPage: PageType<APICall[]> = await fetchApplicationAPICalls(currentApplication.id, pageSize, currentPageNum, search);
-      setPage(newPage);
-      setCurrentPageNum(newPage.pageable.pageNumber);
-    } else {
+  async function refreshAPICalls(searchVal = search, sortByVal = sortBy, directionVal = direction) {
+    try {
+      await queryClient.invalidateQueries({queryKey: ['currentApplication']});
+
+      if (currentApplication) {
+        const newPage: PageType<APICall[]> = await fetchApplicationAPICalls(currentApplication.id, pageSize, currentPageNum, searchVal, sortByVal, directionVal);
+        setPage(newPage);
+        setCurrentPageNum(newPage.pageable.pageNumber);
+      } else {
+        setPage(undefined);
+      }
+    } catch (e) {
       setPage(undefined);
+      toast.error((e as Error).message);
     }
   }
 
+  const debouncedSearchForValue = useCallback(debounce(async (value) => {
+    await refreshAPICalls(value);
+  }, 500), [refreshAPICalls]);
+
   async function searchForValue(value: string) {
-    await setSearch(value);
-    setTimeout(() => {
-      refreshAPICalls();
-    }, 300);
+    setSearch(value);
+    debouncedSearchForValue(value);
+  }
+
+  function changeSortBy(newSortBy: ValidSorts) {
+
+    let newDir: ValidDirections;
+
+    if (sortBy === newSortBy) {
+      // Change direction
+      newDir = direction === "ASC" ? "DESC" : "ASC";
+      setDirection(newDir);
+    } else {
+      // Reset direction and then change sortBy
+      newDir = "DESC";
+      setDirection(newDir);
+      setSortBy(newSortBy);
+    }
+    refreshAPICalls(search, newSortBy, newDir);
   }
 
   if (!currentApplication && !isLoadingCurrentApplication) {
@@ -80,7 +110,7 @@ const Page = () => {
 
             <button
               className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer"
-              onClick={refreshAPICalls}
+              onClick={() => searchForValue('')}
             >
               <RiResetRightLine/>
             </button>
@@ -123,11 +153,66 @@ const Page = () => {
             <table className="table-auto w-full text-sm">
               <thead className="">
               <tr className="">
-                <th className="p-4 text-left rounded-tl-md bg-gray-50 border-b-gray-200 border-b">PATH</th>
-                <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">METHOD</th>
-                <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">STATUS</th>
-                <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">REMOTE ADDRESS</th>
-                <th className="p-4 text-left rounded-tr-md bg-gray-50 border-b-gray-200 border-b">TIMESTAMP</th>
+                <th className="p-4 text-left rounded-tl-md bg-gray-50 border-b-gray-200 border-b">
+                  <span
+                    className="inline-flex items-center gap-2 hover:text-primary cursor-pointer"
+                    onClick={() => changeSortBy("path")}
+                  >
+                    PATH
+                    {sortBy === "path" && (direction === "DESC"
+                        ? <RiSortDesc className="text-primary size-4"/>
+                        : <RiSortAsc className="text-primary size-4"/>
+                    )}
+                  </span>
+                </th>
+                <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">
+                  <span
+                    className="inline-flex items-center gap-2 hover:text-primary cursor-pointer"
+                    onClick={() => changeSortBy("method")}
+                  >
+                    METHOD
+                    {sortBy === "method" && (direction === "DESC"
+                        ? <RiSortDesc className="text-primary size-4"/>
+                        : <RiSortAsc className="text-primary size-4"/>
+                    )}
+                  </span>
+                </th>
+                <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">
+                  <span
+                    className="inline-flex items-center gap-2 hover:text-primary cursor-pointer"
+                    onClick={() => changeSortBy("responseStatus")}
+                  >
+                    RESPONSE STATUS
+                    {sortBy === "responseStatus" && (direction === "DESC"
+                        ? <RiSortDesc className="text-primary size-4"/>
+                        : <RiSortAsc className="text-primary size-4"/>
+                    )}
+                  </span>
+                </th>
+                <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">
+                  <span
+                    className="inline-flex items-center gap-2 hover:text-primary cursor-pointer"
+                    onClick={() => changeSortBy("remoteAddress")}
+                  >
+                    REMOTE ADDRESS
+                    {sortBy === "remoteAddress" && (direction === "DESC"
+                        ? <RiSortDesc className="text-primary size-4"/>
+                        : <RiSortAsc className="text-primary size-4"/>
+                    )}
+                  </span>
+                </th>
+                <th className="p-4 text-left rounded-tr-md bg-gray-50 border-b-gray-200 border-b">
+                  <span
+                    className="inline-flex items-center gap-2 hover:text-primary cursor-pointer"
+                    onClick={() => changeSortBy("timestamp")}
+                  >
+                    TIMESTAMP
+                    {sortBy === "timestamp" && (direction === "DESC"
+                        ? <RiSortDesc className="text-primary size-4"/>
+                        : <RiSortAsc className="text-primary size-4"/>
+                    )}
+                  </span>
+                </th>
               </tr>
               </thead>
               <tbody>
