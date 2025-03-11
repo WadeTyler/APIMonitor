@@ -12,7 +12,7 @@ const ApiCallRow = ({apiCall}: {
       <td className="p-4 text-left border-b-gray-200 border-b">{apiCall.method}</td>
       <td className="p-4 text-left border-b-gray-200 border-b"><ResponseStatus status={apiCall.responseStatus} /></td>
       <td className="p-4 text-left border-b-gray-200 border-b">{apiCall.remoteAddress}</td>
-      <td className="p-4 text-left border-b-gray-200 border-b">{apiCall.timestamp}</td>
+      <td className="p-4 text-left border-b-gray-200 border-b">{new Date(apiCall.timestamp).toUTCString()}</td>
     </tr>
   );
 };
