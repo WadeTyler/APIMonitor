@@ -1,9 +1,10 @@
 import React, {SetStateAction} from 'react';
 
-const Pagination = ({currentPageNum, setCurrentPageNum, totalPages}: {
+const Pagination = ({currentPageNum, setCurrentPageNum, totalPages, cn}: {
   currentPageNum: number;
   setCurrentPageNum: React.Dispatch<SetStateAction<number>>;
   totalPages: number;
+  cn?: string;
 }) => {
 
   const prevPage = () => {
@@ -25,7 +26,7 @@ const Pagination = ({currentPageNum, setCurrentPageNum, totalPages}: {
   }
 
   return (
-    <div className="flex items-center justify-center gap-2 text-secondary">
+    <div className={`flex items-center justify-center gap-2 text-secondary ${cn}`}>
 
       {/* Prev Button */}
       {currentPageNum > 0 && (

@@ -17,6 +17,7 @@ import APICallRow from "@/components/APICallRow";
 import Pagination from "@/components/Pagination";
 import {debounce} from "next/dist/server/utils";
 import toast from "react-hot-toast";
+import GoTopButton from "@/components/GoTopButton";
 
 
 const Page = () => {
@@ -104,7 +105,7 @@ const Page = () => {
       <div className="page-padding w-full min-h-screen flex flex-col items-center">
 
         <div
-          className="flex flex-col gap-4 max-w-[80rem] max-h-[45rem] h-fit w-full bg-white shadow-md rounded-md lg:p-8 p-4">
+          className="flex flex-col gap-4 max-w-[80rem] lg:max-h-[45rem] md:max-h-[50rem] sm:max-h-[52rem] h-full h-fit w-full bg-white shadow-md rounded-md lg:p-8 p-4">
           <div className="flex items-center justify-between w-full">
             <span className="text-xl font-semibold text-dark">API Request Monitor</span>
 
@@ -149,8 +150,11 @@ const Page = () => {
 
           </div>
 
+          {page && <Pagination cn="sm:hidden" currentPageNum={currentPageNum} setCurrentPageNum={setCurrentPageNum}
+                               totalPages={page.totalPages}/>}
+
           <div className="h-full overflow-scroll rounded-md border border-gray-200 text-secondary">
-            <table className="table-auto w-full text-sm">
+            <table className="table-auto w-full md:text-sm text-xs">
               <thead className="">
               <tr className="">
                 <th className="p-4 text-left rounded-tl-md bg-gray-50 border-b-gray-200 border-b">
@@ -225,6 +229,9 @@ const Page = () => {
 
           {page && <Pagination currentPageNum={currentPageNum} setCurrentPageNum={setCurrentPageNum}
                                totalPages={page.totalPages}/>}
+
+          {/* Scroll up button for small displays */}
+          <GoTopButton />
 
         </div>
       </div>
