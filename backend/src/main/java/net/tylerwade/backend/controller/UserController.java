@@ -2,14 +2,13 @@ package net.tylerwade.backend.controller;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import net.tylerwade.backend.dto.APIResponse;
-import net.tylerwade.backend.dto.LoginRequest;
-import net.tylerwade.backend.dto.SignupRequest;
+import net.tylerwade.backend.dto.*;
 import net.tylerwade.backend.entity.User;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.services.UserService;
 import org.apache.coyote.BadRequestException;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -72,13 +71,49 @@ public class UserController {
     @GetMapping({"/", ""})
     public ResponseEntity<?> getMe(HttpServletResponse response, @CookieValue(name = "auth_token") String authToken) {
         try {
-            User user = userService.getUser(authToken);
-            user.setPassword(null);
-            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(user, "User Data Retrieved."));
+            // Get User and Convert to DTO
+            UserDTO userDTO = userService.convertToUserDTO(userService.getUser(authToken));
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userDTO, "User Data Retrieved."));
         } catch (UnauthorizedException e) {
             Cookie logoutAuthToken = userService.createLogoutCookie();
             response.addCookie(logoutAuthToken);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@CookieValue(name = "auth_token") String authToken) {
+        try {
+            // Convert to User Profile DTO
+            UserProfileDTO userProfileDTO = userService.convertToUserProfileDTO(userService.getUser(authToken));
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(userProfileDTO, "User Profile Retrieved"));
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@CookieValue(name = "auth_token") String authToken, @RequestBody ChangePasswordRequest changePasswordRequest, HttpServletResponse response) {
+        try {
+            // Get User
+            User user = userService.getUser(authToken);
+
+            // Change Password
+            userService.changePassword(changePasswordRequest, user);
+
+            // Log user out
+            response.addCookie(userService.createLogoutCookie());
+
+            // Return message
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Password Changed Successfully. Please login again."));
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(e.getMessage()));
+        } catch (NotAcceptableException e) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(APIResponse.error(e.getMessage()));
         }
     }
 

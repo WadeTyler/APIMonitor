@@ -34,6 +34,7 @@ public class ApplicationController {
         try {
             User user = userService.getUser(authToken);
             Application application = applicationService.createApplication(createApplicationRequest, user.getId());
+
             return ResponseEntity.status(HttpStatus.CREATED).body(APIResponse.success(application, "Application created."));
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));

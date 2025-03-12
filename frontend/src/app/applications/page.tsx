@@ -18,7 +18,10 @@ import {useRouter} from "next/navigation";
 
 const Page = () => {
 
+  // Routing
   const router = useRouter();
+
+  // Query Client and Data
   const queryClient = useQueryClient();
 
   const {
@@ -33,17 +36,21 @@ const Page = () => {
 
   const {data: authUser} = useQuery({queryKey: ['authUser'], queryFn: fetchAuthUser});
 
-  useEffect(() => {
-    queryClient.invalidateQueries({queryKey: ['applications']});
-  }, [authUser]);
+  // Functions
 
   function refreshApplications() {
-    queryClient.invalidateQueries({ queryKey: ['applications']});
+    queryClient.invalidateQueries({queryKey: ['applications']});
   }
 
   function navigateToApplication(publicToken: string) {
     router.push(`/applications/${publicToken}`);
   }
+
+  // Refresh applications on render and auth user change
+  useEffect(() => {
+    refreshApplications();
+  }, [authUser]);
+
 
   return (
     <AuthProvider>
@@ -60,7 +67,8 @@ const Page = () => {
         )}
 
         {applications && !isLoadingApplications && !loadApplicationsError && (
-          <div className="flex flex-col gap-4 max-w-[65rem] max-h-[40rem] h-fit w-full bg-white shadow-md rounded-md lg:p-8 p-4">
+          <div
+            className="flex flex-col gap-4 max-w-[65rem] max-h-[40rem] h-fit w-full bg-white shadow-md rounded-md lg:p-8 p-4">
             <div className="flex items-center justify-between w-full">
               <span className="text-xl font-semibold text-dark">Applications</span>
 
@@ -68,7 +76,7 @@ const Page = () => {
                 className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer"
                 onClick={refreshApplications}
               >
-                <RiResetRightLine />
+                <RiResetRightLine/>
               </button>
             </div>
 
@@ -80,22 +88,23 @@ const Page = () => {
                     <span className="inline-flex gap-1"><RiAppStoreLine/> Name</span>
                   </th>
                   <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">
-                    <span className="inline-flex gap-1"><RiSignalTowerLine /> Total Calls</span>
+                    <span className="inline-flex gap-1"><RiSignalTowerLine/> Total Calls</span>
                   </th>
                   <th className="p-4 text-left bg-gray-50 border-b-gray-200 border-b">
-                    <span className="inline-flex gap-1"><RiRouteLine /> Total Paths</span>
+                    <span className="inline-flex gap-1"><RiRouteLine/> Total Paths</span>
                   </th>
                   <th className="p-4 text-left rounded-tr-md bg-gray-50 border-b-gray-200 border-b">
-                    <span className="inline-flex gap-1"><RiLinksLine /> Total Addresses</span>
+                    <span className="inline-flex gap-1"><RiLinksLine/> Total Addresses</span>
                   </th>
                 </tr>
                 </thead>
                 <tbody>
                 {applications.map((application) => (
-                  <tr key={application.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigateToApplication(application.publicToken)}>
+                  <tr key={application.id} className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigateToApplication(application.publicToken)}>
                     <td className="p-4 text-left border-b-gray-200 border-b">{application.name}</td>
                     <td className="p-4 text-left border-b-gray-200 border-b">{application.totalAPICalls}</td>
-                    <td className="p-4 text-left border-b-gray-200 border-b">{application.uniquePaths.length}</td>
+                    <td className="p-4 text-left border-b-gray-200 border-b">{application.uniquePaths?.length}</td>
                     <td className="p-4 text-left border-b-gray-200 border-b">{application.totalUniqueRemoteAddr}</td>
                   </tr>
                 ))}
@@ -103,7 +112,7 @@ const Page = () => {
               </table>
             </div>
             <Link href="/applications/create" className="submit-btn2">
-              <RiPencilLine />
+              <RiPencilLine/>
               <span>Create an Application</span>
             </Link>
           </div>

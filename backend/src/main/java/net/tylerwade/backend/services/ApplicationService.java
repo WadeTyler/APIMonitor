@@ -10,11 +10,9 @@ import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.repository.APICallRepository;
 import net.tylerwade.backend.repository.ApplicationRepository;
 import org.apache.coyote.BadRequestException;
-import org.hibernate.mapping.Array;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +21,8 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final APICallRepository apiCallRepository;
+
+    private int MAX_APPLICATIONS_FREE_TIER = 5;
 
     public ApplicationService(ApplicationRepository applicationRepository, APICallRepository apiCallRepository) {
         this.applicationRepository = applicationRepository;
@@ -35,10 +35,16 @@ public class ApplicationService {
             throw new BadRequestException("All fields required. (Name)");
         }
 
+        // Check if user already has max applications
+        if (applicationRepository.countByUserId(userId) >= MAX_APPLICATIONS_FREE_TIER) {
+            throw new NotAcceptableException("You have reached the max applications for your tier: " + MAX_APPLICATIONS_FREE_TIER + " Applications.");
+        }
+
         // Check if user already has an application with that name.
         if (applicationRepository.existsByNameAndUserIdIgnoreCase(createApplicationRequest.getName(), userId)) {
             throw new NotAcceptableException("You already have an application with that name.");
         }
+
 
         // Create new application
         Application application = new Application(userId, createApplicationRequest.getName());

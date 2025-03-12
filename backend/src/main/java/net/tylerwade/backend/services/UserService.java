@@ -4,29 +4,44 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.servlet.http.Cookie;
-import net.tylerwade.backend.dto.LoginRequest;
-import net.tylerwade.backend.dto.SignupRequest;
+import net.tylerwade.backend.dto.*;
+import net.tylerwade.backend.entity.PasswordChangeAttempt;
 import net.tylerwade.backend.entity.User;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
+import net.tylerwade.backend.repository.APICallRepository;
+import net.tylerwade.backend.repository.ApplicationRepository;
+import net.tylerwade.backend.repository.PasswordChangeAttemptRepository;
 import net.tylerwade.backend.repository.UserRepository;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.parsing.PassThroughSourceExtractor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.Optional;
 
 @Service
 public class UserService {
 
+    // Dependencies
     private final UserRepository userRepository;
+    private final ApplicationRepository applicationRepository;
+    private final APICallRepository apiCallRepository;
+    private final PasswordChangeAttemptRepository passwordChangeAttemptRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final String authSecret;
     private final String environment;
 
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment) {
+    // Variables
+    private final int MAX_PASSWORD_CHANGE_ATTEMPTS = 5;
+
+    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment) {
         this.userRepository = userRepository;
+        this.applicationRepository = applicationRepository;
+        this.apiCallRepository = apiCallRepository;
+        this.passwordChangeAttemptRepository = passwordChangeAttemptRepository;
         this.passwordEncoder = passwordEncoder;
         this.authSecret = authSecret;
         this.environment = environment;
@@ -68,7 +83,7 @@ public class UserService {
     public User attemptLogin(LoginRequest loginRequest) throws BadRequestException {
         // Check for missing fields
         if (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty()
-        || loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
+                || loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
             throw new BadRequestException("All fields required. (Email, Password)");
         }
 
@@ -89,8 +104,8 @@ public class UserService {
     public User attemptSignup(SignupRequest signupRequest) throws BadRequestException, NotAcceptableException {
         // Check for missing values
         if (signupRequest.getEmail() == null || signupRequest.getEmail().isEmpty()
-        || signupRequest.getPassword() == null || signupRequest.getPassword().isEmpty()
-        || signupRequest.getConfirmPassword() == null || signupRequest.getConfirmPassword().isEmpty()) {
+                || signupRequest.getPassword() == null || signupRequest.getPassword().isEmpty()
+                || signupRequest.getConfirmPassword() == null || signupRequest.getConfirmPassword().isEmpty()) {
             throw new BadRequestException("All fields required. (Email, Password, Confirm Password)");
         }
 
@@ -99,10 +114,8 @@ public class UserService {
             throw new BadRequestException("Passwords do not match.");
         }
 
-        // Check password length
-        if (signupRequest.getPassword().length() < 6 || signupRequest.getPassword().length() > 50 || signupRequest.getPassword().contains(" ")) {
-            throw new BadRequestException("Password must be between 6-50 characters and cannot contain spaces.");
-        }
+        // Check password requirements
+        checkPasswordRequirements(signupRequest.getPassword());
 
         // Check if email already taken
         if (userRepository.existsByEmailIgnoreCase(signupRequest.getEmail())) {
@@ -129,6 +142,44 @@ public class UserService {
         return userOptional.get();
     }
 
+    public UserProfileDTO convertToUserProfileDTO(User user) {
+        return new UserProfileDTO(
+                user.getId(),
+                user.getEmail(),
+                getApplicationCount(user.getId()),
+                getTotalAPIRequests(user.getId()),
+                getTotalUniqueRemoteAddresses(user.getId())
+        );
+    }
+
+    public UserDTO convertToUserDTO(User user) {
+        return new UserDTO(user.getId());
+    }
+
+    private Integer getApplicationCount(String id) {
+        return applicationRepository.countByUserId(id);
+    }
+
+    private Long getTotalAPIRequests(String userId) {
+        Long totalAPIRequests = 0L;
+
+        for (String appId : applicationRepository.findApplicationIdByUserId(userId)) {
+            totalAPIRequests += apiCallRepository.countDistinctAPICallByAppId(appId);
+        }
+
+        return totalAPIRequests;
+    }
+
+    private Long getTotalUniqueRemoteAddresses(String userId) {
+        Long totalUniqueRemoteAddresses = 0L;
+
+        for (String appId : applicationRepository.findApplicationIdByUserId(userId)) {
+            totalUniqueRemoteAddresses += apiCallRepository.countDistinctAPICallByRemoteAddressAndAppIdEquals(appId);
+        }
+
+        return totalUniqueRemoteAddresses;
+    }
+
     private String decodeToken(String token) throws UnauthorizedException {
         try {
             Algorithm algorithm = Algorithm.HMAC256(authSecret);
@@ -140,5 +191,63 @@ public class UserService {
         } catch (Exception e) {
             throw new UnauthorizedException("Unauthorized");
         }
+    }
+
+    private void checkPasswordRequirements(String password) throws BadRequestException {
+        if (password.length() < 6 || password.length() > 50) {
+            throw new BadRequestException("Password length must be between 6 - 50 characters.");
+        }
+    }
+
+    public void changePassword(ChangePasswordRequest changePasswordRequest, User user) throws UnauthorizedException, BadRequestException, NotAcceptableException {
+        // Add password change attempt
+        Optional<PasswordChangeAttempt> pwcAttempt = passwordChangeAttemptRepository.findById(user.getId());
+        if (pwcAttempt.isEmpty()) {
+            // First attempt: add it.
+            passwordChangeAttemptRepository.save(new PasswordChangeAttempt(user.getId(), 1));
+            System.out.println("PWC Added");
+        } else {
+            // Not first attempt: Check if at max or add 1
+            PasswordChangeAttempt pwc = pwcAttempt.get();
+            // Check if at max
+            if (pwc.getCount() >= MAX_PASSWORD_CHANGE_ATTEMPTS) {
+                throw new NotAcceptableException("You have reached the max amount of password change attempts. Try again later.");
+            }
+
+            // Add 1
+            pwc.setCount(pwc.getCount() + 1);
+            passwordChangeAttemptRepository.save(pwc);
+        }
+
+
+        // Check for missing fields
+        if (changePasswordRequest.getCurrentPassword() == null || changePasswordRequest.getCurrentPassword().isEmpty()
+                || changePasswordRequest.getNewPassword() == null || changePasswordRequest.getNewPassword().isEmpty()
+                || changePasswordRequest.getConfirmNewPassword() == null || changePasswordRequest.getConfirmNewPassword().isEmpty())
+            throw new BadRequestException("All fields required: (Current Password, New Password, Confirm New Password)");
+
+        // Verify currentPassword
+        if (!verifyPassword(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
+            throw new UnauthorizedException("Current Password is incorrect.");
+        }
+
+        // Check new password matches
+        if (!changePasswordRequest.getNewPassword().equals(changePasswordRequest.getConfirmNewPassword())) {
+            throw new BadRequestException("New Password does not match.");
+        }
+
+        // Check if new password is current password
+        if (verifyPassword(changePasswordRequest.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("New Password cannot be Current Password.");
+        }
+
+        // Check new password requirements
+        checkPasswordRequirements(changePasswordRequest.getNewPassword());
+
+        // Encode and change
+        user.setPassword(encodePassword(changePasswordRequest.getNewPassword()));
+
+        // Save updated user
+        userRepository.save(user);
     }
 }
