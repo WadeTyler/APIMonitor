@@ -67,3 +67,25 @@ export async function fetchApplicationFromPublicToken(publicToken: string) {
     return null;
   }
 }
+
+export async function deleteApplication(appId: string) {
+  try {
+    const response = await fetch(`${API_URL}/applications/delete`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "appId": appId
+      },
+      credentials: "include"
+    });
+
+    const apiResponse: APIResponse<null> = await response.json();
+
+    if (!response.ok || !apiResponse.success)
+      throw new Error(apiResponse.message);
+
+    return apiResponse.message;
+  } catch (e) {
+    throw new Error((e as Error).message || "Failed to delete application");
+  }
+}

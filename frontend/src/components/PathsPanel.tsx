@@ -1,5 +1,5 @@
 import React from 'react';
-import {RiCloseLine} from "@remixicon/react";
+import CloseButton from "@/components/util/CloseButton";
 
 const PathsPanel = ({paths, close, searchForValue}: {
   paths: string[];
@@ -19,8 +19,7 @@ const PathsPanel = ({paths, close, searchForValue}: {
       <div className="flex items-center justify-between">
         <h2 className="text-dark text-xl font-semibold">Paths</h2>
         {/* Close button */}
-        <RiCloseLine className="text-primary hover:bg-dark rounded-md hover:text-light duration-200 cursor-pointer"
-                     onClick={close}/>
+        <CloseButton close={close} />
       </div>
 
       <hr className="border w-full border-gray-300"/>

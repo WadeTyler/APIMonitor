@@ -6,6 +6,7 @@ import AuthProvider from "@/components/providers/AuthProvider";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {fetchApplicationFromPublicToken} from "@/lib/util/ApplicationUtil";
 import {
+  RiEdit2Line,
   RiResetRightLine, RiSearchLine, RiSortAsc, RiSortDesc,
 } from "@remixicon/react";
 import ApplicationInfoBar from "@/components/ApplicationInfoBar";
@@ -18,6 +19,7 @@ import Pagination from "@/components/Pagination";
 import {debounce} from "next/dist/server/utils";
 import toast from "react-hot-toast";
 import GoTopButton from "@/components/GoTopButton";
+import EditApplicationPanel from "@/components/EditApplicationPanel";
 
 
 const Page = () => {
@@ -31,6 +33,8 @@ const Page = () => {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<ValidSorts>('timestamp');
   const [direction, setDirection] = useState<ValidDirections>("DESC");
+
+  const [isEditingApplicationDetails, setIsEditingApplicationDetails] = useState(false);
 
   // QueryClient
   const queryClient = useQueryClient();
@@ -105,16 +109,25 @@ const Page = () => {
       <div className="page-padding w-full min-h-screen flex flex-col items-center">
 
         <div
-          className="flex flex-col gap-4 max-w-[80rem] lg:max-h-[45rem] md:max-h-[50rem] sm:max-h-[52rem] h-full h-fit w-full bg-white shadow-md rounded-md lg:p-8 p-4">
+          className="flex flex-col gap-4 max-w-[80rem] lg:max-h-[45rem] md:max-h-[50rem] sm:max-h-[52rem] h-full w-full bg-white shadow-md rounded-md lg:p-8 p-4">
           <div className="flex items-center justify-between w-full">
             <span className="text-xl font-semibold text-dark">API Request Monitor</span>
 
-            <button
-              className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer"
-              onClick={() => searchForValue('')}
-            >
-              <RiResetRightLine/>
-            </button>
+            <div className="inline-flex items-center gap-8">
+              <button
+                className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer inline-flex gap-1 items-center"
+                onClick={() => setIsEditingApplicationDetails(prev => !prev)}
+              >
+                <RiEdit2Line />
+                Edit Application
+              </button>
+              <button
+                className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer"
+                onClick={() => searchForValue('')}
+              >
+                <RiResetRightLine/>
+              </button>
+            </div>
           </div>
 
           {/* Info Bar */}
@@ -234,6 +247,11 @@ const Page = () => {
           <GoTopButton />
 
         </div>
+
+        {isEditingApplicationDetails && currentApplication && (
+          <EditApplicationPanel close={() => setIsEditingApplicationDetails(false)} currentApplication={currentApplication} />
+        )}
+
       </div>
     </AuthProvider>
   );
