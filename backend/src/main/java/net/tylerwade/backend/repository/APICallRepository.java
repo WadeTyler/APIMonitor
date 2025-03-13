@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface APICallRepository extends JpaRepository<APICall, Long> {
 
@@ -25,10 +27,22 @@ public interface APICallRepository extends JpaRepository<APICall, Long> {
     @Query("select count(distinct a) from APICall a WHERE a.appId = ?1")
     Long countDistinctAPICallByAppId(String appId);
 
+    @Query("select count(a) from APICall a where a.appId = ?1")
+    Long countAPICallByAppId(String appId);
+
+
+    @Query("SELECT a.id FROM APICall a WHERE a.appId = ?1 ORDER BY a.timestamp ASC LIMIT ?2")
+    List<Long> findTopIdsByIdOrderByTimestampAsc(String appId, int top);
+
 
     @Modifying
     @Transactional
     void deleteAllByAppId(String appId);
+
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM APICall a WHERE a.id IN ?1")
+    void deleteByIds(List<Long> ids);
 
     @Query("select distinct a.path from APICall a WHERE a.appId = ?1")
     String[] findDistinctPathByAppId(String appId);

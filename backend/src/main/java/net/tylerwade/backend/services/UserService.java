@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
+import net.tylerwade.backend.config.VaxProperties;
 import net.tylerwade.backend.dto.*;
 import net.tylerwade.backend.entity.PasswordChangeAttempt;
 import net.tylerwade.backend.entity.SignupVerificationCode;
@@ -24,10 +25,6 @@ import java.util.Random;
 @Service
 public class UserService {
 
-    // Variables
-    private final int MAX_PASSWORD_CHANGE_ATTEMPTS = 10;
-    private final int MAX_SIGNUP_VERIFICATION_CODE_ATTEMPTS = 8;
-
     // Dependencies
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
@@ -38,8 +35,9 @@ public class UserService {
     private final String authSecret;
     private final String environment;
     private final EmailService emailService;
+    private final VaxProperties vaxProperties;
 
-    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService) {
+    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService, VaxProperties vaxProperties) {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.apiCallRepository = apiCallRepository;
@@ -49,6 +47,7 @@ public class UserService {
         this.authSecret = authSecret;
         this.environment = environment;
         this.emailService = emailService;
+        this.vaxProperties = vaxProperties;
     }
 
     private String encodePassword(String password) {
@@ -190,7 +189,7 @@ public class UserService {
         SignupVerificationCode signupVerificationCode = signupVerificationCodeOptional.get();
 
         // Check if reached max attempts
-        if (signupVerificationCode.getCodesSent() >= MAX_SIGNUP_VERIFICATION_CODE_ATTEMPTS) {
+        if (signupVerificationCode.getCodesSent() >= vaxProperties.getMaxSignupVerificationCodeAttempts()) {
             throw new NotAcceptableException("Max Signup Verification Codes Requested. Please try again later.");
         }
 
@@ -285,7 +284,7 @@ public class UserService {
             // Not first attempt: Check if at max or add 1
             PasswordChangeAttempt pwc = pwcAttempt.get();
             // Check if at max
-            if (pwc.getCount() >= MAX_PASSWORD_CHANGE_ATTEMPTS) {
+            if (pwc.getCount() >= vaxProperties.getMaxPasswordChangeAttempts()) {
                 throw new NotAcceptableException("You have reached the max amount of password change attempts. Try again later.");
             }
 

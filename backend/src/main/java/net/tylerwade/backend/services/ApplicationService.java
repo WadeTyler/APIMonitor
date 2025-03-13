@@ -1,5 +1,6 @@
 package net.tylerwade.backend.services;
 
+import net.tylerwade.backend.config.VaxProperties;
 import net.tylerwade.backend.dto.ApplicationDTO;
 import net.tylerwade.backend.dto.CreateApplicationRequest;
 import net.tylerwade.backend.dto.MethodCount;
@@ -21,12 +22,12 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final APICallRepository apiCallRepository;
+    private final VaxProperties vaxProperties;
 
-    private int MAX_APPLICATIONS_FREE_TIER = 5;
-
-    public ApplicationService(ApplicationRepository applicationRepository, APICallRepository apiCallRepository) {
+    public ApplicationService(ApplicationRepository applicationRepository, APICallRepository apiCallRepository, VaxProperties vaxProperties) {
         this.applicationRepository = applicationRepository;
         this.apiCallRepository = apiCallRepository;
+        this.vaxProperties = vaxProperties;
     }
 
     public Application createApplication(CreateApplicationRequest createApplicationRequest, String userId) throws BadRequestException, NotAcceptableException {
@@ -36,8 +37,8 @@ public class ApplicationService {
         }
 
         // Check if user already has max applications
-        if (applicationRepository.countByUserId(userId) >= MAX_APPLICATIONS_FREE_TIER) {
-            throw new NotAcceptableException("You have reached the max applications for your tier: " + MAX_APPLICATIONS_FREE_TIER + " Applications.");
+        if (applicationRepository.countByUserId(userId) >= vaxProperties.getMaxApplicationsFreeTier()) {
+            throw new NotAcceptableException("You have reached the max applications for your tier: " + vaxProperties.getMaxApplicationsFreeTier() + " Applications.");
         }
 
         // Check if user already has an application with that name.

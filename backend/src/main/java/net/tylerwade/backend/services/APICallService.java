@@ -1,5 +1,6 @@
 package net.tylerwade.backend.services;
 
+import net.tylerwade.backend.config.VaxProperties;
 import net.tylerwade.backend.dto.AddAPICallRequest;
 import net.tylerwade.backend.entity.APICall;
 import net.tylerwade.backend.exceptions.NotFoundException;
@@ -12,22 +13,26 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class APICallService {
 
+    // Dependencies
     private final APICallRepository apiCallRepository;
     private final ApplicationRepository applicationRepository;
     private final ApplicationService applicationService;
+    private final VaxProperties vaxProperties;
 
-    public APICallService(APICallRepository apiCallRepository, ApplicationRepository applicationRepository, ApplicationService applicationService) {
+    public APICallService(APICallRepository apiCallRepository, ApplicationRepository applicationRepository, ApplicationService applicationService, VaxProperties vaxProperties) {
         this.apiCallRepository = apiCallRepository;
         this.applicationRepository = applicationRepository;
         this.applicationService = applicationService;
+        this.vaxProperties = vaxProperties;
     }
 
-    public APICall addAPICall(AddAPICallRequest addAPICallRequest, String appId) throws NotFoundException, BadRequestException {
+    public void addAPICall(AddAPICallRequest addAPICallRequest, String appId) throws NotFoundException, BadRequestException {
         // Check missing fields
         if (addAPICallRequest.getPath() == null || addAPICallRequest.getPath().isEmpty() ||
         addAPICallRequest.getMethod() == null || addAPICallRequest.getMethod().isEmpty() ||
@@ -51,10 +56,15 @@ public class APICallService {
 
         // Save
         apiCallRepository.save(apiCall);
-        // Hide appId
-        apiCall.setAppId(null);
 
-        return apiCall;
+        // Check if at max calls
+        if (apiCallRepository.countAPICallByAppId(appId) >= vaxProperties.getMaxApiCallsFreeTier()) {
+            // Delete oldest percentage
+            int deleteTop = vaxProperties.getMaxApiCallsFreeTier() / 10;
+            List<Long> deleteIds = apiCallRepository.findTopIdsByIdOrderByTimestampAsc(appId, deleteTop);
+
+            apiCallRepository.deleteByIds(deleteIds);
+        }
     }
 
     public Page<APICall> getApplicationAPICalls(String appId, String userId, Pageable pageable, String search) throws NotFoundException, BadRequestException, UnauthorizedException {
