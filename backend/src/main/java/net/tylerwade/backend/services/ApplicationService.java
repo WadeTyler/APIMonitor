@@ -4,6 +4,7 @@ import net.tylerwade.backend.config.VaxProperties;
 import net.tylerwade.backend.dto.ApplicationDTO;
 import net.tylerwade.backend.dto.CreateApplicationRequest;
 import net.tylerwade.backend.dto.MethodCount;
+import net.tylerwade.backend.dto.UpdateApplicationRequest;
 import net.tylerwade.backend.entity.Application;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.NotFoundException;
@@ -158,6 +159,39 @@ public class ApplicationService {
         }
 
         return application;
+    }
+
+    public Application updateApplication(String appId, UpdateApplicationRequest updateRequest, String userId) throws BadRequestException, NotFoundException, UnauthorizedException, NotAcceptableException {
+
+        // Check for fields.
+        if (updateRequest.getName() == null || updateRequest.getName().isEmpty()) {
+            throw new BadRequestException("Required field missing: (name)");
+        }
+
+        // Check if application exists.
+        Optional<Application> appOptional = applicationRepository.findById(appId);
+        if (appOptional.isEmpty()) {
+            throw new NotFoundException("Invalid Application ID. Not Found.");
+        }
+
+        Application app = appOptional.get();
+
+        // Check if owner.
+        if (!app.getUserId().equals(userId)) {
+            throw new UnauthorizedException("Unauthorized");
+        }
+
+        // Check if user has another app with the name.
+        Optional<Application> existingByName = applicationRepository.findByNameIgnoreCaseAndUserIdIgnoreCase(updateRequest.getName(), userId);
+        if (existingByName.isPresent() && !existingByName.get().getId().equals(appId)) {
+            throw new NotAcceptableException("You already have an application with that name.");
+        }
+
+        // Update application name.
+        app.setName(updateRequest.getName());
+        applicationRepository.save(app);
+
+        return app;
     }
 
 }

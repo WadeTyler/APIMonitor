@@ -1,5 +1,5 @@
 import APIResponse from "@/types/APIResponse";
-import {Application, CreateApplicationRequest} from "@/types/ApplicationTypes";
+import {Application, CreateApplicationRequest, UpdateApplicationRequest} from "@/types/ApplicationTypes";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -87,5 +87,28 @@ export async function deleteApplication(appId: string) {
     return apiResponse.message;
   } catch (e) {
     throw new Error((e as Error).message || "Failed to delete application");
+  }
+}
+
+export async function updateApplication(updateData: { appId: string, updateRequest: UpdateApplicationRequest}) {
+  try {
+    const response = await fetch(`${API_URL}/applications/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "appId": updateData.appId
+      },
+      credentials: "include",
+      body: JSON.stringify(updateData.updateRequest)
+    });
+
+    const apiResponse: APIResponse<Application> = await response.json();
+
+    if (!response.ok || !apiResponse.success || !apiResponse.data)
+      throw new Error(apiResponse.message);
+
+    return apiResponse.data;
+  } catch (e) {
+    throw new Error((e as Error).message || "Failed to update application");
   }
 }

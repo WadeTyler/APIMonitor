@@ -15,6 +15,10 @@ export type CreateApplicationRequest = {
   name: string;
 }
 
+export type UpdateApplicationRequest = {
+   name: string;
+}
+
 type MethodCount = {
   method: string,
   count: number

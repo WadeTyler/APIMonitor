@@ -13,6 +13,8 @@ public interface ApplicationRepository extends JpaRepository<Application, String
 
     boolean existsByNameAndUserIdIgnoreCase(String name, String userId);
 
+    Optional<Application> findByNameIgnoreCaseAndUserIdIgnoreCase(String name, String userId);
+
     Integer countByUserId(String userId);
 
     @Query("select a.id from Application a where a.userId = ?1")
