@@ -5,6 +5,7 @@ public class SignupRequest {
     private String email;
     private String password;
     private String confirmPassword;
+    private String verificationCode;
 
     public SignupRequest() {
     }
@@ -31,5 +32,13 @@ public class SignupRequest {
 
     public void setConfirmPassword(String confirmPassword) {
         this.confirmPassword = confirmPassword;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
     }
 }

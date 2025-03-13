@@ -3,24 +3,23 @@ package net.tylerwade.backend.services;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import net.tylerwade.backend.dto.*;
 import net.tylerwade.backend.entity.PasswordChangeAttempt;
+import net.tylerwade.backend.entity.SignupVerificationCode;
 import net.tylerwade.backend.entity.User;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
-import net.tylerwade.backend.repository.APICallRepository;
-import net.tylerwade.backend.repository.ApplicationRepository;
-import net.tylerwade.backend.repository.PasswordChangeAttemptRepository;
-import net.tylerwade.backend.repository.UserRepository;
+import net.tylerwade.backend.repository.*;
+import net.tylerwade.backend.util.HTMLMessageTemplates;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.parsing.PassThroughSourceExtractor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class UserService {
@@ -29,22 +28,27 @@ public class UserService {
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
     private final APICallRepository apiCallRepository;
+    private final SignupVerificationCodeRepository signupVerificationCodeRepository;
     private final PasswordChangeAttemptRepository passwordChangeAttemptRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final String authSecret;
     private final String environment;
+    private final EmailService emailService;
 
     // Variables
-    private final int MAX_PASSWORD_CHANGE_ATTEMPTS = 5;
+    private final int MAX_PASSWORD_CHANGE_ATTEMPTS = 10;
 
-    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment) {
+
+    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService) {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.apiCallRepository = apiCallRepository;
+        this.signupVerificationCodeRepository = signupVerificationCodeRepository;
         this.passwordChangeAttemptRepository = passwordChangeAttemptRepository;
         this.passwordEncoder = passwordEncoder;
         this.authSecret = authSecret;
         this.environment = environment;
+        this.emailService = emailService;
     }
 
     private String encodePassword(String password) {
@@ -102,6 +106,51 @@ public class UserService {
     }
 
     public User attemptSignup(SignupRequest signupRequest) throws BadRequestException, NotAcceptableException {
+
+        checkValidSignupRequest(signupRequest);
+
+        // Check for verification code
+        if (signupRequest.getVerificationCode() == null || signupRequest.getVerificationCode().isEmpty()) {
+            throw new BadRequestException("Verification Code Required.");
+        }
+
+        // Validate Signup Verification Code
+        Optional<SignupVerificationCode> codeOptional = signupVerificationCodeRepository.findById(signupRequest.getVerificationCode());
+
+        // Check code exists
+        if (codeOptional.isEmpty()) {
+            throw new BadRequestException("Invalid or Expired Verification Code.");
+        }
+
+        // Check if email matches
+        if (!codeOptional.get().getEmail().equals(signupRequest.getEmail())) {
+            throw new BadRequestException("Invalid or Expired Verification Code. (Email does not match).");
+        }
+
+        // Add new user
+        User user = new User(signupRequest.getEmail(), encodePassword(signupRequest.getPassword()));
+        userRepository.save(user);
+
+        // Delete verification code
+        signupVerificationCodeRepository.delete(codeOptional.get());
+
+        return user;
+    }
+
+    public void attemptSignupVerificationProccess(SignupRequest signupRequest) throws NotAcceptableException, BadRequestException, MessagingException {
+        checkValidSignupRequest(signupRequest);
+
+        // Create Code
+        SignupVerificationCode signupVerificationCode = generateSignupVerificationCode(signupRequest.getEmail());
+
+        // Send email with code
+        emailService.sendHTMLMessage(signupRequest.getEmail(),
+                "Signup Verification Code | Vax Monitor",
+                HTMLMessageTemplates.getVerificationCodeTemplate(signupVerificationCode.getVerificationCode()));
+    }
+
+    // Check if signuprequest info is valid, does not check for verification code however.
+    private void checkValidSignupRequest(SignupRequest signupRequest) throws NotAcceptableException, BadRequestException {
         // Check for missing values
         if (signupRequest.getEmail() == null || signupRequest.getEmail().isEmpty()
                 || signupRequest.getPassword() == null || signupRequest.getPassword().isEmpty()
@@ -117,16 +166,32 @@ public class UserService {
         // Check password requirements
         checkPasswordRequirements(signupRequest.getPassword());
 
+
         // Check if email already taken
         if (userRepository.existsByEmailIgnoreCase(signupRequest.getEmail())) {
             throw new NotAcceptableException("Email already taken.");
         }
+    }
 
-        // Add new user
-        User user = new User(signupRequest.getEmail(), encodePassword(signupRequest.getPassword()));
-        userRepository.save(user);
+    private SignupVerificationCode generateSignupVerificationCode(String email) {
 
-        return user;
+        StringBuilder code = new StringBuilder(4);
+        Random random = new Random();
+
+        while (code.length() != 4 || signupVerificationCodeRepository.existsById(code.toString())) {
+            code.append(random.nextInt(10));
+
+            if (code.length() == 4 && signupVerificationCodeRepository.existsById(code.toString())) {
+                code.setLength(0);
+            }
+        }
+
+        // Create Obj, save and then return
+        SignupVerificationCode signupVerificationCode = new SignupVerificationCode(email, code.toString());
+        signupVerificationCodeRepository.save(signupVerificationCode);
+
+        return signupVerificationCode;
+
     }
 
     private boolean verifyPassword(String password, String encodedPassword) {

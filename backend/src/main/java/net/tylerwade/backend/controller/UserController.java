@@ -1,5 +1,6 @@
 package net.tylerwade.backend.controller;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import net.tylerwade.backend.dto.*;
@@ -8,7 +9,6 @@ import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.services.UserService;
 import org.apache.coyote.BadRequestException;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +42,22 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(APIResponse.error(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error("Something went wrong. Try again later."));
+        }
+    }
+
+    @PostMapping("/signup/verification")
+    public ResponseEntity<?> receiveSignupVerificationCode(@RequestBody SignupRequest signupRequest) {
+        try {
+            userService.attemptSignupVerificationProccess(signupRequest);
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Please check your email for a verification code."));
+        } catch (MessagingException e) {
+            System.out.println("Signup Verification MessagingException caught: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error("Something went wrong. Check the email field, or try again later."));
+        } catch (NotAcceptableException e) {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(APIResponse.error(e.getMessage()));
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(e.getMessage()));
         }
     }
 
@@ -122,4 +138,5 @@ public class UserController {
         response.addCookie(userService.createLogoutCookie());
         return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Logout Successful"));
     }
+
 }
