@@ -2,6 +2,8 @@ export type User = {
   id: string,
 }
 
+
+
 export type UserProfile = {
   id: string,
   email: string,
@@ -13,6 +15,13 @@ export type UserProfile = {
 export type LoginRequest = {
   email: string,
   password: string
+}
+
+export type SignupRequest = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  verificationCode?: string;
 }
 
 export type ChangePasswordRequest = {

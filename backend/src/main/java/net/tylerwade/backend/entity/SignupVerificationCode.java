@@ -6,16 +6,16 @@ import org.springframework.data.redis.core.RedisHash;
 @RedisHash(value = "SignupVerificationCode", timeToLive = 300L)
 public class SignupVerificationCode {
 
-    @Id
-    private String verificationCode;
-    private String email;
 
-    public SignupVerificationCode(String email, String verificationCode) {
+    @Id
+    private String email;
+    private String verificationCode;
+    private int codesSent;
+
+    public SignupVerificationCode(String email, String verificationCode, int codesSent) {
         this.email = email;
         this.verificationCode = verificationCode;
-    }
-
-    public SignupVerificationCode() {
+        this.codesSent = codesSent;
     }
 
     public String getEmail() {
@@ -32,5 +32,13 @@ public class SignupVerificationCode {
 
     public void setVerificationCode(String verificationCode) {
         this.verificationCode = verificationCode;
+    }
+
+    public int getCodesSent() {
+        return codesSent;
+    }
+
+    public void setCodesSent(int codesSent) {
+        this.codesSent = codesSent;
     }
 }

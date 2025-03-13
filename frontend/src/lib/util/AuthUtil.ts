@@ -1,5 +1,5 @@
 import APIResponse from "@/types/APIResponse";
-import {ChangePasswordRequest, LoginRequest, User, UserProfile} from "@/types/AuthTypes";
+import {ChangePasswordRequest, LoginRequest, SignupRequest, User, UserProfile} from "@/types/AuthTypes";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -50,6 +50,50 @@ export async function fetchAuthUserProfile() {
   } catch (e) {
     console.log("Failed to Authenticated ", (e as Error).message);
     return null;
+  }
+}
+
+export async function attemptSignup(signupRequest: SignupRequest) {
+  try {
+    const response = await fetch(`${API_URL}/user/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify(signupRequest)
+    });
+
+    const apiResponse: APIResponse<undefined> = await response.json();
+
+    if (!response.ok || !apiResponse.success)
+      throw new Error(apiResponse.message);
+
+    return apiResponse.message;
+  } catch (e) {
+    throw new Error((e as Error).message || "Failed to Signup. Try again later.");
+  }
+}
+
+export async function attemptSignupVerification(signupRequest: SignupRequest) {
+  try {
+    const response = await fetch(`${API_URL}/user/signup/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify(signupRequest)
+    });
+
+    const apiResponse: APIResponse<undefined> = await response.json();
+
+    if (!response.ok || !apiResponse.success)
+      throw new Error(apiResponse.message);
+
+    return apiResponse.message;
+  } catch (e) {
+    throw new Error((e as Error).message || "Failed to Verify Signup. Try again later.");
   }
 }
 

@@ -23,8 +23,8 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<?> signup(HttpServletResponse response, @RequestBody SignupRequest signupRequest) {
+    @PostMapping("/signup/verify")
+    public ResponseEntity<?> signupVerification(HttpServletResponse response, @RequestBody SignupRequest signupRequest) {
         try {
             // Attempt to signup user
             User user = userService.attemptSignup(signupRequest);
@@ -45,7 +45,7 @@ public class UserController {
         }
     }
 
-    @PostMapping("/signup/verification")
+    @PostMapping("/signup")
     public ResponseEntity<?> receiveSignupVerificationCode(@RequestBody SignupRequest signupRequest) {
         try {
             userService.attemptSignupVerificationProccess(signupRequest);

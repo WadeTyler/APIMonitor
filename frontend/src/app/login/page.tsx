@@ -5,6 +5,7 @@ import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {attemptLogin} from "@/lib/util/AuthUtil";
 import {useRouter} from "next/navigation";
 import NotAuthProvider from "@/components/providers/NotAuthProvider";
+import Link from "next/link";
 
 const Page = () => {
   const router = useRouter();
@@ -64,10 +65,12 @@ const Page = () => {
             <p className="text-danger">{(error as Error).message}</p>
           )}
 
-          <button className={`submit-btn2 ${isPending && 'cursor-not-allowed! bg-primary-dark!'}`} disabled={isPending}>
+          <button className={`submit-btn2 ${isPending && 'cursor-not-allowed! bg-dark!'}`} disabled={isPending}>
             <RiLoginCircleLine/>
             Login
           </button>
+
+          <p className="text-sm">Don&#39;t have an account? <Link href={'/signup'} className="text-primary hover:underline">Signup</Link></p>
 
         </form>
 

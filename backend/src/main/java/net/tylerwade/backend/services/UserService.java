@@ -24,6 +24,10 @@ import java.util.Random;
 @Service
 public class UserService {
 
+    // Variables
+    private final int MAX_PASSWORD_CHANGE_ATTEMPTS = 10;
+    private final int MAX_SIGNUP_VERIFICATION_CODE_ATTEMPTS = 8;
+
     // Dependencies
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
@@ -34,10 +38,6 @@ public class UserService {
     private final String authSecret;
     private final String environment;
     private final EmailService emailService;
-
-    // Variables
-    private final int MAX_PASSWORD_CHANGE_ATTEMPTS = 10;
-
 
     public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService) {
         this.userRepository = userRepository;
@@ -115,16 +115,11 @@ public class UserService {
         }
 
         // Validate Signup Verification Code
-        Optional<SignupVerificationCode> codeOptional = signupVerificationCodeRepository.findById(signupRequest.getVerificationCode());
+        Optional<SignupVerificationCode> codeOptional = signupVerificationCodeRepository.findById(signupRequest.getEmail());
 
-        // Check code exists
-        if (codeOptional.isEmpty()) {
+        // Check code exists and matches
+        if (codeOptional.isEmpty() || (!codeOptional.get().getVerificationCode().equals(signupRequest.getVerificationCode()))) {
             throw new BadRequestException("Invalid or Expired Verification Code.");
-        }
-
-        // Check if email matches
-        if (!codeOptional.get().getEmail().equals(signupRequest.getEmail())) {
-            throw new BadRequestException("Invalid or Expired Verification Code. (Email does not match).");
         }
 
         // Add new user
@@ -173,25 +168,40 @@ public class UserService {
         }
     }
 
-    private SignupVerificationCode generateSignupVerificationCode(String email) {
+    private SignupVerificationCode generateSignupVerificationCode(String email) throws NotAcceptableException {
 
         StringBuilder code = new StringBuilder(4);
         Random random = new Random();
 
-        while (code.length() != 4 || signupVerificationCodeRepository.existsById(code.toString())) {
+        for (int i = 0; i < 4; i++) {
             code.append(random.nextInt(10));
-
-            if (code.length() == 4 && signupVerificationCodeRepository.existsById(code.toString())) {
-                code.setLength(0);
-            }
         }
 
-        // Create Obj, save and then return
-        SignupVerificationCode signupVerificationCode = new SignupVerificationCode(email, code.toString());
+        // Check if code already sent
+        Optional<SignupVerificationCode> signupVerificationCodeOptional = signupVerificationCodeRepository.findById(email);
+
+        if (signupVerificationCodeOptional.isEmpty()) {
+            // Create a new one
+            SignupVerificationCode signupVerificationCode = new SignupVerificationCode(email, code.toString(), 1);
+            signupVerificationCodeRepository.save(signupVerificationCode);
+            return signupVerificationCode;
+        }
+
+        SignupVerificationCode signupVerificationCode = signupVerificationCodeOptional.get();
+
+        // Check if reached max attempts
+        if (signupVerificationCode.getCodesSent() >= MAX_SIGNUP_VERIFICATION_CODE_ATTEMPTS) {
+            throw new NotAcceptableException("Max Signup Verification Codes Requested. Please try again later.");
+        }
+
+        // Update code and count
+
+        signupVerificationCode.setVerificationCode(code.toString());
+        signupVerificationCode.setCodesSent(signupVerificationCode.getCodesSent() + 1);
+        // Save
         signupVerificationCodeRepository.save(signupVerificationCode);
 
         return signupVerificationCode;
-
     }
 
     private boolean verifyPassword(String password, String encodedPassword) {
