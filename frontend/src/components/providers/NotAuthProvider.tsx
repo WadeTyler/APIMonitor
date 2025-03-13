@@ -6,8 +6,9 @@ import {fetchAuthUser} from "@/lib/util/AuthUtil";
 import {useRouter} from "next/navigation";
 import Loader from "@/components/util/Loader";
 
-const NotAuthProvider = ({children}: {
-  children: React.ReactNode
+const NotAuthProvider = ({children, redirectTo = "/applications"}: {
+  children: React.ReactNode;
+  redirectTo?: string;
 }) => {
 
   const router = useRouter();
@@ -19,7 +20,7 @@ const NotAuthProvider = ({children}: {
 
   useEffect(() => {
     if (!loadingAuth && authUser) {
-      router.push('/applications');
+      router.push(redirectTo);
     }
   }, [loadingAuth, authUser, !authUser]);
 

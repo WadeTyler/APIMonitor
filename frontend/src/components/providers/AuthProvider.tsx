@@ -6,8 +6,9 @@ import {fetchAuthUser} from "@/lib/util/AuthUtil";
 import {useRouter} from "next/navigation";
 import Loader from "@/components/util/Loader";
 
-const AuthProvider = ({children}: {
-  children: React.ReactNode
+const AuthProvider = ({children, redirectTo = "/login"}: {
+  children: React.ReactNode;
+  redirectTo?: string;
 }) => {
 
   const router = useRouter();
@@ -20,7 +21,7 @@ const AuthProvider = ({children}: {
 
   useEffect(() => {
     if (!loadingAuth && !authUser) {
-      router.push('/login');
+      router.push(redirectTo);
     }
   }, [loadingAuth, authUser, !authUser]);
 
