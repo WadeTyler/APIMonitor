@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface ApplicationRepository extends JpaRepository<Application, String> {
 
     boolean existsByNameAndUserIdIgnoreCase(String name, String userId);
+    boolean existsByIdAndUserId(String id, String userId);
 
     Optional<Application> findByNameIgnoreCaseAndUserIdIgnoreCase(String name, String userId);
 
@@ -23,5 +24,7 @@ public interface ApplicationRepository extends JpaRepository<Application, String
     List<Application> findAllByUserId(String userId);
 
     Optional<Application> findByPublicToken(String publicToken);
+
+
 
 }

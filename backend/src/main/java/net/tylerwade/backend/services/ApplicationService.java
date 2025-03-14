@@ -77,6 +77,26 @@ public class ApplicationService {
         return application;
     }
 
+    public Application getApplication(String appId) throws NotFoundException {
+        // Find application
+        Optional<Application> appOptional = applicationRepository.findById(appId);
+        if (appOptional.isEmpty()) throw new NotFoundException("Application not found");
+
+        return appOptional.get();
+    }
+
+    public Application getApplicationWithAuth(String appId, String userId) throws UnauthorizedException, NotFoundException {
+        Application app = getApplication(appId);
+
+        if (!app.getUserId().equals(userId)) throw new UnauthorizedException("Unauthorized");
+
+        return app;
+    }
+
+    public boolean applicationExistsAndIsOwner(String appId, String userId) {
+        return applicationRepository.existsByIdAndUserId(appId, userId);
+    }
+
     public void deleteApplication(String appId, String userId) throws UnauthorizedException, NotFoundException, BadRequestException {
         // Check for missing fields
         if (appId == null || appId.isEmpty()) {

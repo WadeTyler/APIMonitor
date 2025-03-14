@@ -7,6 +7,7 @@ import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.dto.APIResponse;
 import net.tylerwade.backend.entity.User;
 import net.tylerwade.backend.services.APICallService;
+import net.tylerwade.backend.services.AlertService;
 import net.tylerwade.backend.services.UserService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
@@ -23,16 +24,22 @@ public class APICallController {
 
     private final APICallService apiCallService;
     private final UserService userService;
+    private final AlertService alertService;
 
-    public APICallController(APICallService apiCallService, UserService userService) {
+    public APICallController(APICallService apiCallService, UserService userService, AlertService alertService) {
         this.apiCallService = apiCallService;
         this.userService = userService;
+        this.alertService = alertService;
     }
 
     @PostMapping({"", "/"})
     public ResponseEntity<?> addAPICall(@RequestBody AddAPICallRequest addAPICallRequest, @RequestHeader String appId) {
         try {
-            apiCallService.addAPICall(addAPICallRequest, appId);
+            APICall apiCall = apiCallService.addAPICall(addAPICallRequest, appId);
+
+            // Check Alerts
+            alertService.sendAlerts(apiCall);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(APIResponse.success(null, "API Call Added Successfully."));
         } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(APIResponse.error(e.getMessage()));

@@ -32,7 +32,7 @@ public class APICallService {
         this.vaxProperties = vaxProperties;
     }
 
-    public void addAPICall(AddAPICallRequest addAPICallRequest, String appId) throws NotFoundException, BadRequestException {
+    public APICall addAPICall(AddAPICallRequest addAPICallRequest, String appId) throws NotFoundException, BadRequestException {
         // Check missing fields
         if (addAPICallRequest.getPath() == null || addAPICallRequest.getPath().isEmpty() ||
         addAPICallRequest.getMethod() == null || addAPICallRequest.getMethod().isEmpty() ||
@@ -65,6 +65,8 @@ public class APICallService {
 
             apiCallRepository.deleteByIds(deleteIds);
         }
+
+        return apiCall;
     }
 
     public Page<APICall> getApplicationAPICalls(String appId, String userId, Pageable pageable, String search) throws NotFoundException, BadRequestException, UnauthorizedException {
