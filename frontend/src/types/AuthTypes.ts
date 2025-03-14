@@ -29,3 +29,8 @@ export type ChangePasswordRequest = {
   newPassword: string;
   confirmNewPassword: string;
 }
+
+export type DeleteAccountRequest = {
+  password: string;
+  verificationCode: string;
+}

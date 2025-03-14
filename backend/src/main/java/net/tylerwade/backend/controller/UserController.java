@@ -139,4 +139,45 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Logout Successful"));
     }
 
+    @DeleteMapping("/delete-account/verify")
+    public ResponseEntity<?> deleteAccount(@CookieValue("auth_token") String authToken, @RequestBody DeleteAccountRequest deleteRequest, HttpServletResponse response) {
+        try {
+            // Get User
+            User user = userService.getUser(authToken);
+
+            // Attempt to delete account
+            userService.deleteAccount(deleteRequest, user);
+
+            // Add logout cookie
+            Cookie logoutToken = userService.createLogoutCookie();
+            response.addCookie(logoutToken);
+
+            // Return deleted
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Account deleted successfully."));
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/delete-account/send-code")
+    public ResponseEntity<?> sendDeleteAccountVerificationCode(@CookieValue("auth_token") String authToken) {
+        try {
+            // Get User
+            User user = userService.getUser(authToken);
+
+            // Send verification code to email
+            userService.sendDeleteAccountVerificationCode(user);
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "An email has been sent with a verification to delete your account."));
+
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
+        } catch (MessagingException e) {
+            System.out.println("DeleteAccount MessagingException caught: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(APIResponse.error("Something went wrong. Check the email field, or try again later."));
+        }
+    }
+
 }

@@ -7,6 +7,7 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import net.tylerwade.backend.config.VaxProperties;
 import net.tylerwade.backend.dto.*;
+import net.tylerwade.backend.entity.DeleteAccountVerificationCode;
 import net.tylerwade.backend.entity.PasswordChangeAttempt;
 import net.tylerwade.backend.entity.SignupVerificationCode;
 import net.tylerwade.backend.entity.User;
@@ -14,13 +15,13 @@ import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.repository.*;
 import net.tylerwade.backend.util.HTMLMessageTemplates;
+import net.tylerwade.backend.util.Util;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 public class UserService {
@@ -31,16 +32,18 @@ public class UserService {
     private final APICallRepository apiCallRepository;
     private final SignupVerificationCodeRepository signupVerificationCodeRepository;
     private final PasswordChangeAttemptRepository passwordChangeAttemptRepository;
+    private final DeleteAccountCodeRepository deleteAccountCodeRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final String authSecret;
     private final String environment;
     private final EmailService emailService;
     private final VaxProperties vaxProperties;
 
-    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService, VaxProperties vaxProperties) {
+    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, DeleteAccountCodeRepository deleteAccountCodeRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService, VaxProperties vaxProperties) {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.apiCallRepository = apiCallRepository;
+        this.deleteAccountCodeRepository = deleteAccountCodeRepository;
         this.signupVerificationCodeRepository = signupVerificationCodeRepository;
         this.passwordChangeAttemptRepository = passwordChangeAttemptRepository;
         this.passwordEncoder = passwordEncoder;
@@ -169,19 +172,14 @@ public class UserService {
 
     private SignupVerificationCode generateSignupVerificationCode(String email) throws NotAcceptableException {
 
-        StringBuilder code = new StringBuilder(4);
-        Random random = new Random();
-
-        for (int i = 0; i < 4; i++) {
-            code.append(random.nextInt(10));
-        }
+        String code = Util.generateRandomVerificationCode(4);
 
         // Check if code already sent
         Optional<SignupVerificationCode> signupVerificationCodeOptional = signupVerificationCodeRepository.findById(email);
 
         if (signupVerificationCodeOptional.isEmpty()) {
             // Create a new one
-            SignupVerificationCode signupVerificationCode = new SignupVerificationCode(email, code.toString(), 1);
+            SignupVerificationCode signupVerificationCode = new SignupVerificationCode(email, code, 1);
             signupVerificationCodeRepository.save(signupVerificationCode);
             return signupVerificationCode;
         }
@@ -195,7 +193,7 @@ public class UserService {
 
         // Update code and count
 
-        signupVerificationCode.setVerificationCode(code.toString());
+        signupVerificationCode.setVerificationCode(code);
         signupVerificationCode.setCodesSent(signupVerificationCode.getCodesSent() + 1);
         // Save
         signupVerificationCodeRepository.save(signupVerificationCode);
@@ -324,4 +322,54 @@ public class UserService {
         // Save updated user
         userRepository.save(user);
     }
+
+    public void sendDeleteAccountVerificationCode(User user) throws MessagingException {
+        // Code
+        String code = Util.generateRandomVerificationCode(8);
+
+        DeleteAccountVerificationCode deleteAccountVerificationCode = new DeleteAccountVerificationCode(user.getId(), code);
+        deleteAccountCodeRepository.save(deleteAccountVerificationCode);
+
+        emailService.sendHTMLMessage(user.getEmail(), "Delete Account Verification Code | Vax Monitor", HTMLMessageTemplates.getDeleteAccountVerificationCodeTemplate(code));
+    }
+
+    public void deleteAccount(DeleteAccountRequest deleteRequest, User user) throws BadRequestException, UnauthorizedException {
+        // Check for missing fields
+        if (deleteRequest.getPassword() == null || deleteRequest.getPassword().isEmpty()
+        || deleteRequest.getVerificationCode() == null || deleteRequest.getVerificationCode().isEmpty()) {
+            throw new BadRequestException("All fields required: (Password, Verification Code)");
+        }
+
+        // Check if valid code
+        Optional<DeleteAccountVerificationCode> deleteAccountVerificationCodeOptional = deleteAccountCodeRepository.findById(user.getId());
+        if (deleteAccountVerificationCodeOptional.isEmpty()) {
+            throw new BadRequestException("Verification Code is Invalid or Expired.");
+        }
+
+        DeleteAccountVerificationCode deleteAccountVerificationCode = deleteAccountVerificationCodeOptional.get();
+
+        if (!deleteAccountVerificationCode.getVerificationCode().equals(deleteRequest.getVerificationCode())) {
+            throw new BadRequestException("Verification Code is Invalid or Expired.");
+        }
+
+        // Check if password is correct
+        if (!verifyPassword(deleteRequest.getPassword(), user.getPassword())) {
+            throw new UnauthorizedException("Password is incorrect.");
+        }
+
+        // Delete code
+        deleteAccountCodeRepository.delete(deleteAccountVerificationCode);
+
+        // Delete account
+        userRepository.delete(user);
+    }
+
 }
+
+
+
+
+
+
+
+

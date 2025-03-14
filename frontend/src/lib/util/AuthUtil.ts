@@ -1,5 +1,12 @@
 import APIResponse from "@/types/APIResponse";
-import {ChangePasswordRequest, LoginRequest, SignupRequest, User, UserProfile} from "@/types/AuthTypes";
+import {
+  ChangePasswordRequest,
+  DeleteAccountRequest,
+  LoginRequest,
+  SignupRequest,
+  User,
+  UserProfile
+} from "@/types/AuthTypes";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -156,5 +163,48 @@ export async function attemptChangePassword(changePasswordRequest: ChangePasswor
 
   } catch (e) {
     throw new Error((e as Error).message || "Failed to change password. Try again later");
+  }
+}
+
+export async function sendDeleteAccountVerificationCode() {
+  try {
+    const response = await fetch(`${API_URL}/user/delete-account/send-code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+    });
+
+    const apiResponse: APIResponse<null> = await response.json();
+
+    if (!response.ok || !apiResponse.success)
+      throw new Error(apiResponse.message);
+
+    return apiResponse.message;
+  } catch (e) {
+    throw new Error((e as Error).message || "Failed to send verification code. Try again later");
+  }
+}
+
+export async function attemptDeleteAccount(deleteRequest: DeleteAccountRequest) {
+  try {
+    const response = await fetch(`${API_URL}/user/delete-account/verify`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(deleteRequest),
+      credentials: "include",
+    });
+
+    const apiResponse: APIResponse<null> = await response.json();
+
+    if (!response.ok || !apiResponse.success)
+      throw new Error(apiResponse.message);
+
+    return apiResponse.message;
+  } catch (e) {
+    throw new Error((e as Error).message || "Failed to delete account. Try again later");
   }
 }
