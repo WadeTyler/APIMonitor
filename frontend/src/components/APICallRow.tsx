@@ -7,7 +7,7 @@ const ApiCallRow = ({apiCall}: {
 }) => {
 
   return (
-    <tr className="hover:bg-gray-50 cursor-pointer">
+    <tr className="hover:bg-gray-50 cursor-pointer text-xs">
       <td className="p-4 text-left border-b-gray-200 border-b">{apiCall.path}</td>
       <td className="p-4 text-left border-b-gray-200 border-b">{apiCall.method}</td>
       <td className="p-4 text-left border-b-gray-200 border-b"><ResponseStatus status={apiCall.responseStatus} /></td>

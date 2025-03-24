@@ -26,7 +26,7 @@ const Pagination = ({currentPageNum, setCurrentPageNum, totalPages, cn}: {
   }
 
   return (
-    <div className={`flex items-center justify-center gap-2 text-secondary ${cn}`}>
+    <div className={`flex items-center justify-center gap-2 text-secondary lg:text-base text-xs ${cn}`}>
 
       {/* Prev Button */}
       {currentPageNum > 0 && (

@@ -110,7 +110,7 @@ const Page = () => {
 
         <div
           className="flex flex-col gap-4 max-w-[80rem] lg:max-h-[45rem] md:max-h-[50rem] sm:max-h-[52rem] h-full w-full bg-white shadow-md rounded-md lg:p-8 p-4">
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full lg:text-base text-xs">
             <span className="text-xl font-semibold text-dark">API Request Monitor</span>
 
             <div className="inline-flex items-center gap-8">
@@ -119,13 +119,14 @@ const Page = () => {
                 onClick={() => setIsEditingApplicationDetails(prev => !prev)}
               >
                 <RiEdit2Line />
-                Edit Application
+                <span>Edit <span className="lg:inline-flex hidden">Application</span></span>
               </button>
               <button
-                className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer"
+                className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer inline-flex gap-1 items-center"
                 onClick={() => searchForValue('')}
               >
                 <RiResetRightLine/>
+                <span className="lg:inline-flex hidden">Refresh</span>
               </button>
             </div>
           </div>
@@ -137,7 +138,7 @@ const Page = () => {
           }
 
           {/* Controls */}
-          <div className="flex items-center justify-between gap-4 w-full">
+          <div className="flex items-center justify-between gap-4 w-full lg:text-base text-xs">
             {/* Search Bar */}
             <form
               className="input-bar w-full inline-flex items-center gap-2 focus-within:border-primary!"

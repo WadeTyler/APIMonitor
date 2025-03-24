@@ -35,7 +35,7 @@ const ApplicationInfoBar = ({currentApplication, searchForValue}: {
   return (
     <div
       className="w-full p-4 flex md:flex-row flex-wrap justify-between gap-8 bg-gray-50 rounded-md border-gray-200 border lg:text-base text-sm">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 lg:text-base text-xs">
         {/* App Name*/}
         <section className="inline-flex gap-2 font-semibold items-center">
           <RiAppStoreLine/>
@@ -71,7 +71,7 @@ const ApplicationInfoBar = ({currentApplication, searchForValue}: {
       </div>
 
       {/* Middle Section (Totals) */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 lg:text-base text-xs">
         {/* Total API Calls */}
         <section className="inline-flex gap-2 font-semibold items-center">
           <RiSignalTowerLine/>
@@ -92,13 +92,13 @@ const ApplicationInfoBar = ({currentApplication, searchForValue}: {
           <span className="text-secondary">Total Paths:</span>
           <span className="text-foreground">{currentApplication.uniquePaths?.length}</span>
           <RiEyeLine
-            className="text-sm p-1 text-light bg-dark rounded-md relative cursor-pointer hover:bg-primary-dark duration-200"
+            className="lg:text-base text-xs p-1 text-light bg-dark rounded-md relative cursor-pointer hover:bg-primary-dark duration-200"
             onClick={() => setShowPaths(prev => !prev)}
           />
         </section>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 lg:text-base text-xs">
         <section className="inline-flex gap-2 font-semibold items-center">
           <RiInputMethodLine/>
           <span className="text-secondary">Method Counts:</span>
