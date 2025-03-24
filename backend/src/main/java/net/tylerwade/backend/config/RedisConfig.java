@@ -1,6 +1,7 @@
 package net.tylerwade.backend.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import net.tylerwade.backend.config.properties.RedisProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -9,23 +10,17 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 @Configuration
 public class RedisConfig {
+    private final RedisProperties redisProperties;
 
-    private final String redisHost;
-    private final int redisPort;
-    private final String redisPassword;
-
-    public RedisConfig(@Value("${REDIS_HOST}") String redisHost, @Value("${REDIS_PORT}") int redisPort, @Value("${REDIS_PASSWORD}") String redisPassword) {
-        this.redisHost = redisHost;
-        this.redisPort = redisPort;
-        this.redisPassword = redisPassword;
-
-        System.out.println(redisPort);
+    @Autowired
+    public RedisConfig(RedisProperties redisProperties) {
+        this.redisProperties = redisProperties;
     }
 
     @Bean
     JedisConnectionFactory jedisConnectionFactory() {
-        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
-        config.setPassword(redisPassword);
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisProperties.getHost(), redisProperties.getPort());
+        config.setPassword(redisProperties.getPassword());
 
         return new JedisConnectionFactory(config);
     }

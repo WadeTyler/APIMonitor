@@ -1,4 +1,4 @@
-package net.tylerwade.backend.config;
+package net.tylerwade.backend.config.properties;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.boot.context.properties.ConfigurationProperties;

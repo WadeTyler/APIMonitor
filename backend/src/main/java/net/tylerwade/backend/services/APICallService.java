@@ -1,6 +1,6 @@
 package net.tylerwade.backend.services;
 
-import net.tylerwade.backend.config.VaxProperties;
+import net.tylerwade.backend.config.properties.VaxProperties;
 import net.tylerwade.backend.dto.AddAPICallRequest;
 import net.tylerwade.backend.entity.APICall;
 import net.tylerwade.backend.exceptions.NotFoundException;

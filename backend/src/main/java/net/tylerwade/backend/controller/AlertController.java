@@ -1,5 +1,6 @@
 package net.tylerwade.backend.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.tylerwade.backend.dto.APIResponse;
 import net.tylerwade.backend.dto.alert.AddAlertFieldsRequest;
 import net.tylerwade.backend.entity.alert.AlertConfig;
@@ -9,7 +10,6 @@ import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.services.AlertService;
 import net.tylerwade.backend.services.ApplicationService;
-import net.tylerwade.backend.services.UserService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,20 +19,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/alerts")
 public class AlertController {
 
-    private final UserService userService;
     private final AlertService alertService;
     private final ApplicationService applicationService;
 
-    public AlertController(UserService userService, AlertService alertService, ApplicationService applicationService) {
-        this.userService = userService;
+    public AlertController(AlertService alertService, ApplicationService applicationService) {
         this.alertService = alertService;
         this.applicationService = applicationService;
     }
 
     @GetMapping("/config")
-    public ResponseEntity<?> getConfig(@CookieValue("auth_token") String authToken, @RequestHeader String appId) {
+    public ResponseEntity<?> getConfig(HttpServletRequest request, @RequestHeader String appId) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             Application app = applicationService.getApplication(appId);
 
             // Check if owner of app
@@ -49,9 +47,9 @@ public class AlertController {
     }
 
     @PostMapping("/config/add-field")
-    public ResponseEntity<?> addFieldToAlertConfig(@CookieValue("auth_token") String authToken, @RequestHeader String appId, @RequestBody AddAlertFieldsRequest addAlertFieldsRequest) {
+    public ResponseEntity<?> addFieldToAlertConfig(HttpServletRequest request, @RequestHeader String appId, @RequestBody AddAlertFieldsRequest addAlertFieldsRequest) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             Application app = applicationService.getApplication(appId);
 
             // Check if owner of app
@@ -70,9 +68,9 @@ public class AlertController {
     }
 
     @DeleteMapping("/config/remove-field/{alertFieldId}")
-    public ResponseEntity<?> removeFieldFromAlertConfig(@CookieValue("auth_token") String authToken, @RequestHeader String appId, @PathVariable Long alertFieldId) {
+    public ResponseEntity<?> removeFieldFromAlertConfig(HttpServletRequest request, @RequestHeader String appId, @PathVariable Long alertFieldId) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             Application app = applicationService.getApplication(appId);
 
             // Check if owner of app

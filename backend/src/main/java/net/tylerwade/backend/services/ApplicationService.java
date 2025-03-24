@@ -1,6 +1,6 @@
 package net.tylerwade.backend.services;
 
-import net.tylerwade.backend.config.VaxProperties;
+import net.tylerwade.backend.config.properties.VaxProperties;
 import net.tylerwade.backend.dto.ApplicationDTO;
 import net.tylerwade.backend.dto.CreateApplicationRequest;
 import net.tylerwade.backend.dto.MethodCount;
@@ -83,18 +83,6 @@ public class ApplicationService {
         if (appOptional.isEmpty()) throw new NotFoundException("Application not found");
 
         return appOptional.get();
-    }
-
-    public Application getApplicationWithAuth(String appId, String userId) throws UnauthorizedException, NotFoundException {
-        Application app = getApplication(appId);
-
-        if (!app.getUserId().equals(userId)) throw new UnauthorizedException("Unauthorized");
-
-        return app;
-    }
-
-    public boolean applicationExistsAndIsOwner(String appId, String userId) {
-        return applicationRepository.existsByIdAndUserId(appId, userId);
     }
 
     public void deleteApplication(String appId, String userId) throws UnauthorizedException, NotFoundException, BadRequestException {

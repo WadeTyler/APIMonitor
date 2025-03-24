@@ -1,5 +1,6 @@
 package net.tylerwade.backend.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.tylerwade.backend.dto.AddAPICallRequest;
 import net.tylerwade.backend.entity.APICall;
 import net.tylerwade.backend.exceptions.NotFoundException;
@@ -23,12 +24,10 @@ import org.springframework.web.bind.annotation.*;
 public class APICallController {
 
     private final APICallService apiCallService;
-    private final UserService userService;
     private final AlertService alertService;
 
-    public APICallController(APICallService apiCallService, UserService userService, AlertService alertService) {
+    public APICallController(APICallService apiCallService, AlertService alertService) {
         this.apiCallService = apiCallService;
-        this.userService = userService;
         this.alertService = alertService;
     }
 
@@ -51,7 +50,7 @@ public class APICallController {
     @GetMapping({"/", ""})
     public ResponseEntity<?> getApplicationAPICalls(
             @RequestHeader("appId") String appId,
-            @CookieValue("auth_token") String authToken,
+            HttpServletRequest request,
             // Params
             @RequestParam(defaultValue = "0", required = false) int pageNumber,
             @RequestParam(defaultValue = "50", required = false) int pageSize,
@@ -60,7 +59,7 @@ public class APICallController {
             @RequestParam(required = false) String search
             ) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
 
             // Construct pageable
             PageRequest pageRequest;
@@ -87,13 +86,12 @@ public class APICallController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteAPICall(@PathVariable("id") Long id, @CookieValue("auth_token") String authToken) {
+    public ResponseEntity<?> deleteAPICall(@PathVariable("id") Long id, HttpServletRequest request) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             apiCallService.deleteAPICall(id, user.getId());
 
             return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "API Call Deleted."));
-
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
         } catch (BadRequestException e) {
@@ -106,10 +104,10 @@ public class APICallController {
     @DeleteMapping({"/", ""})
     public ResponseEntity<?> deleteAllApiCallsInApplication(
             @RequestHeader String appId,
-            @CookieValue("auth_token") String authToken
+            HttpServletRequest request
     ) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             apiCallService.deleteAllAPICallsInApplication(appId, user.getId());
 
             return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "All API Calls in Application deleted."));

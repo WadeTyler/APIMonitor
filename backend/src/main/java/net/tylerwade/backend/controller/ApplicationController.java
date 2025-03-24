@@ -1,5 +1,6 @@
 package net.tylerwade.backend.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.tylerwade.backend.dto.APIResponse;
 import net.tylerwade.backend.dto.ApplicationDTO;
 import net.tylerwade.backend.dto.CreateApplicationRequest;
@@ -12,8 +13,6 @@ import net.tylerwade.backend.entity.User;
 import net.tylerwade.backend.services.ApplicationService;
 import net.tylerwade.backend.services.UserService;
 import org.apache.coyote.BadRequestException;
-import org.apache.coyote.Response;
-import org.hibernate.sql.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,22 +25,18 @@ import java.util.List;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
-    private final UserService userService;
 
-    public ApplicationController(ApplicationService applicationService, UserService userService) {
+    public ApplicationController(ApplicationService applicationService) {
         this.applicationService = applicationService;
-        this.userService = userService;
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createApplication(@CookieValue("auth_token") String authToken, @RequestBody CreateApplicationRequest createApplicationRequest) {
+    public ResponseEntity<?> createApplication(HttpServletRequest request, @RequestBody CreateApplicationRequest createApplicationRequest) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             Application application = applicationService.createApplication(createApplicationRequest, user.getId());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(APIResponse.success(application, "Application created."));
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
         } catch (BadRequestException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(e.getMessage()));
         } catch (NotAcceptableException e) {
@@ -50,9 +45,9 @@ public class ApplicationController {
     }
 
     @GetMapping("/{publicToken}")
-    public ResponseEntity<?> getApplicationFromPublicToken(@CookieValue("auth_token") String authToken, @PathVariable String publicToken) {
+    public ResponseEntity<?> getApplicationFromPublicToken(HttpServletRequest request, @PathVariable String publicToken) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             Application application = applicationService.getApplicationFromPublicToken(publicToken, user.getId());
 
             // Convert to DTO
@@ -69,9 +64,9 @@ public class ApplicationController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteApplication(@RequestHeader String appId, @CookieValue("auth_token") String authToken) {
+    public ResponseEntity<?> deleteApplication(@RequestHeader String appId, HttpServletRequest request) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             applicationService.deleteApplication(appId, user.getId());
 
             return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Application deleted."));
@@ -85,28 +80,23 @@ public class ApplicationController {
     }
 
     @GetMapping({"/", ""})
-    public ResponseEntity<?> getAllApplications(@CookieValue("auth_token") String authToken) {
-        try {
-            User user = userService.getUser(authToken);
-            List<Application> applications = applicationService.getAllApplications(user.getId());
+    public ResponseEntity<?> getAllApplications(HttpServletRequest request) {
+        User user = (User) request.getAttribute("user");
+        List<Application> applications = applicationService.getAllApplications(user.getId());
 
-            // Convert to DTOs
-            List<ApplicationDTO> applicationDTOs = new ArrayList<>();
-
-            for (Application application : applications) {
-                applicationDTOs.add(applicationService.convertApplicationToDTO(application));
-            }
-
-            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(applicationDTOs, "User applications received successfully."));
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(APIResponse.error(e.getMessage()));
+        // Convert to DTO
+        List<ApplicationDTO> applicationDTOS = new ArrayList<>();
+        for (Application application : applications) {
+            applicationDTOS.add(applicationService.convertApplicationToDTO(application));
         }
+
+        return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(applicationDTOS, "Applications retrieved successfully."));
     }
 
     @PutMapping({"/", ""})
-    public ResponseEntity<?> updateApplication(@CookieValue("auth_token") String authToken, @RequestHeader String appId, @RequestBody UpdateApplicationRequest updateRequest) {
+    public ResponseEntity<?> updateApplication(HttpServletRequest request, @RequestHeader String appId, @RequestBody UpdateApplicationRequest updateRequest) {
         try {
-            User user = userService.getUser(authToken);
+            User user = (User) request.getAttribute("user");
             Application app = applicationService.updateApplication(appId, updateRequest, user.getId());
 
             // Convert App to DTO

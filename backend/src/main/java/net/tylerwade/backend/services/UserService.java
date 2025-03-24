@@ -1,30 +1,35 @@
 package net.tylerwade.backend.services;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.Cookie;
-import net.tylerwade.backend.config.VaxProperties;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import net.tylerwade.backend.config.properties.JwtConfig;
+import net.tylerwade.backend.config.properties.VaxProperties;
 import net.tylerwade.backend.dto.*;
 import net.tylerwade.backend.entity.DeleteAccountVerificationCode;
 import net.tylerwade.backend.entity.PasswordChangeAttempt;
 import net.tylerwade.backend.entity.SignupVerificationCode;
 import net.tylerwade.backend.entity.User;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
+import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
+import net.tylerwade.backend.model.SecurityUser;
 import net.tylerwade.backend.repository.*;
+import net.tylerwade.backend.services.util.JwtUtil;
 import net.tylerwade.backend.util.HTMLMessageTemplates;
 import net.tylerwade.backend.util.Util;
 import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     // Dependencies
     private final UserRepository userRepository;
@@ -33,13 +38,14 @@ public class UserService {
     private final SignupVerificationCodeRepository signupVerificationCodeRepository;
     private final PasswordChangeAttemptRepository passwordChangeAttemptRepository;
     private final DeleteAccountCodeRepository deleteAccountCodeRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final String authSecret;
-    private final String environment;
+    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final VaxProperties vaxProperties;
+    private final JwtUtil jwtUtil;
+    private final JwtConfig jwtConfig;
 
-    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, DeleteAccountCodeRepository deleteAccountCodeRepository, BCryptPasswordEncoder passwordEncoder, @Value("${JWT_AUTH_SECRET}") String authSecret, @Value("${ENVIRONMENT}") String environment, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService, VaxProperties vaxProperties) {
+    @Autowired
+    public UserService(UserRepository userRepository, ApplicationRepository applicationRepository, APICallRepository apiCallRepository, PasswordChangeAttemptRepository passwordChangeAttemptRepository, DeleteAccountCodeRepository deleteAccountCodeRepository, PasswordEncoder passwordEncoder, SignupVerificationCodeRepository signupVerificationCodeRepository, EmailService emailService, VaxProperties vaxProperties, JwtUtil jwtUtil, JwtConfig jwtConfig) {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.apiCallRepository = apiCallRepository;
@@ -47,64 +53,20 @@ public class UserService {
         this.signupVerificationCodeRepository = signupVerificationCodeRepository;
         this.passwordChangeAttemptRepository = passwordChangeAttemptRepository;
         this.passwordEncoder = passwordEncoder;
-        this.authSecret = authSecret;
-        this.environment = environment;
         this.emailService = emailService;
         this.vaxProperties = vaxProperties;
+        this.jwtUtil = jwtUtil;
+        this.jwtConfig = jwtConfig;
     }
 
     private String encodePassword(String password) {
         return passwordEncoder.encode(password);
     }
 
-    public Cookie createAuthTokenCookie(String id) {
-        String authToken = createAuthToken(id);
-
-        Cookie cookie = new Cookie("auth_token", authToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(environment.equals("production"));
-        cookie.setPath("/");
-        cookie.setMaxAge(60 * 60 * 24); // 24 hours
-
-        return cookie;
-    }
-
-    public Cookie createLogoutCookie() {
-        Cookie cookie = new Cookie("auth_token", "");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(environment.equals("production"));
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        return cookie;
-    }
-
-    private String createAuthToken(String id) {
-        Algorithm algorithm = Algorithm.HMAC256(authSecret);
-        return JWT.create()
-                .withIssuer("apimonitor")
-                .withSubject(id)
-                .sign(algorithm);
-    }
-
-    public User attemptLogin(LoginRequest loginRequest) throws BadRequestException {
-        // Check for missing fields
-        if (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty()
-                || loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
-            throw new BadRequestException("All fields required. (Email, Password)");
-        }
-
-        // Check if user exists with email
-        Optional<User> existingUserOptional = userRepository.findByEmailIgnoreCase(loginRequest.getEmail());
-        if (existingUserOptional.isEmpty()) {
-            throw new BadRequestException("Invalid Email or Password");
-        }
-
-        // Check if passwords match
-        if (!verifyPassword(loginRequest.getPassword(), existingUserOptional.get().getPassword())) {
-            throw new BadRequestException("Invalid Email or Password");
-        }
-
-        return existingUserOptional.get();
+    public void logoutUser(HttpServletRequest request, HttpServletResponse response) throws UnauthorizedException {
+        String token = jwtUtil.getAuthTokenCookieFromRequest(request).getValue().replace(jwtConfig.getTokenPrefix(), "");
+        jwtUtil.addBlacklistedToken(token);
+        response.addCookie(jwtUtil.createLogoutCookie());
     }
 
     public User attemptSignup(SignupRequest signupRequest) throws BadRequestException, NotAcceptableException {
@@ -205,15 +167,6 @@ public class UserService {
         return passwordEncoder.matches(password, encodedPassword);
     }
 
-    public User getUser(String authToken) throws UnauthorizedException {
-        // Decode token and obtain userId
-        String userId = decodeToken(authToken);
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isEmpty()) throw new UnauthorizedException("Unauthorized");
-
-        return userOptional.get();
-    }
-
     public UserProfileDTO convertToUserProfileDTO(User user) {
         return new UserProfileDTO(
                 user.getId(),
@@ -252,18 +205,7 @@ public class UserService {
         return totalUniqueRemoteAddresses;
     }
 
-    private String decodeToken(String token) throws UnauthorizedException {
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(authSecret);
-            DecodedJWT decodedJWT = JWT.require(algorithm)
-                    .withIssuer("apimonitor")
-                    .build()
-                    .verify(token);
-            return decodedJWT.getSubject();
-        } catch (Exception e) {
-            throw new UnauthorizedException("Unauthorized");
-        }
-    }
+
 
     private void checkPasswordRequirements(String password) throws BadRequestException {
         if (password.length() < 6 || password.length() > 50) {
@@ -336,7 +278,7 @@ public class UserService {
     public void deleteAccount(DeleteAccountRequest deleteRequest, User user) throws BadRequestException, UnauthorizedException {
         // Check for missing fields
         if (deleteRequest.getPassword() == null || deleteRequest.getPassword().isEmpty()
-        || deleteRequest.getVerificationCode() == null || deleteRequest.getVerificationCode().isEmpty()) {
+                || deleteRequest.getVerificationCode() == null || deleteRequest.getVerificationCode().isEmpty()) {
             throw new BadRequestException("All fields required: (Password, Verification Code)");
         }
 
@@ -364,6 +306,23 @@ public class UserService {
         userRepository.delete(user);
     }
 
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Optional<User> user = userRepository.findByEmailIgnoreCase(username);
+        if (user.isEmpty()) {
+            throw new UsernameNotFoundException(String.format("Username %s not found.", username));
+        }
+        return new SecurityUser(user.get());
+    }
+
+    public SecurityUser loadUserByUserId(String userId) throws NotFoundException {
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            throw new NotFoundException(String.format("User not found by id: %s", userId));
+        }
+
+        return new SecurityUser(user.get());
+    }
 }
 
 
