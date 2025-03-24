@@ -1,15 +1,14 @@
 package net.tylerwade.backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import net.tylerwade.backend.dto.AddAPICallRequest;
-import net.tylerwade.backend.entity.APICall;
+import net.tylerwade.backend.model.dto.AddAPICallRequest;
+import net.tylerwade.backend.model.entity.APICall;
 import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
-import net.tylerwade.backend.dto.APIResponse;
-import net.tylerwade.backend.entity.User;
+import net.tylerwade.backend.model.dto.APIResponse;
+import net.tylerwade.backend.model.entity.User;
 import net.tylerwade.backend.services.APICallService;
 import net.tylerwade.backend.services.AlertService;
-import net.tylerwade.backend.services.UserService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

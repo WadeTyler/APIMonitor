@@ -1,6 +1,6 @@
 package net.tylerwade.backend.repository;
 
-import net.tylerwade.backend.entity.Application;
+import net.tylerwade.backend.model.entity.Application;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

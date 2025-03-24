@@ -1,17 +1,16 @@
 package net.tylerwade.backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import net.tylerwade.backend.dto.APIResponse;
-import net.tylerwade.backend.dto.ApplicationDTO;
-import net.tylerwade.backend.dto.CreateApplicationRequest;
-import net.tylerwade.backend.dto.UpdateApplicationRequest;
-import net.tylerwade.backend.entity.Application;
+import net.tylerwade.backend.model.dto.APIResponse;
+import net.tylerwade.backend.model.dto.ApplicationDTO;
+import net.tylerwade.backend.model.dto.CreateApplicationRequest;
+import net.tylerwade.backend.model.dto.UpdateApplicationRequest;
+import net.tylerwade.backend.model.entity.Application;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
-import net.tylerwade.backend.entity.User;
+import net.tylerwade.backend.model.entity.User;
 import net.tylerwade.backend.services.ApplicationService;
-import net.tylerwade.backend.services.UserService;
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

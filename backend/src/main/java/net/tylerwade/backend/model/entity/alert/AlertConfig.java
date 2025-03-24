@@ -1,4 +1,4 @@
-package net.tylerwade.backend.entity.alert;
+package net.tylerwade.backend.model.entity.alert;
 
 import jakarta.persistence.*;
 

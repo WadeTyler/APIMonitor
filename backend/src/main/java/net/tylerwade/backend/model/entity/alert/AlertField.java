@@ -1,47 +1,31 @@
-package net.tylerwade.backend.entity;
+package net.tylerwade.backend.model.entity.alert;
 
-import jakarta.persistence.*;
 
-import java.util.Date;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
-@Entity @Table(name = "api_calls")
-public class APICall {
+@Entity
+public class AlertField {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
-    private String appId;
     private String path;
     private String method;
     private Integer responseStatus;
     private String remoteAddress;
-    private Date timestamp = new Date();
 
-    public APICall() {
+    public AlertField() {
     }
 
-    public APICall(String appId, String path, String method, Integer responseStatus, String remoteAddress) {
-        this.appId = appId;
-        this.path = path;
-        this.method = method;
-        this.responseStatus = responseStatus;
-        this.remoteAddress = remoteAddress;
-    }
-
-    public String getAppId() {
-        return appId;
-    }
-
-    public void setAppId(String serviceId) {
-        this.appId = serviceId;
-    }
-
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -69,14 +53,6 @@ public class APICall {
         this.responseStatus = responseStatus;
     }
 
-    public Date getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Date timestamp) {
-        this.timestamp = timestamp;
-    }
-
     public String getRemoteAddress() {
         return remoteAddress;
     }
@@ -87,12 +63,12 @@ public class APICall {
 
     @Override
     public String toString() {
-        return "APICall{" +
-                "path='" + path + '\'' +
+        return "AlertField{" +
+                "id=" + id +
+                ", path='" + path + '\'' +
                 ", method='" + method + '\'' +
                 ", responseStatus=" + responseStatus +
                 ", remoteAddress='" + remoteAddress + '\'' +
-                ", timestamp=" + timestamp +
                 '}';
     }
 }

@@ -1,7 +1,7 @@
 package net.tylerwade.backend.model;
 
 import org.springframework.security.core.GrantedAuthority;
-import net.tylerwade.backend.entity.User;
+import net.tylerwade.backend.model.entity.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;

@@ -2,13 +2,12 @@ package net.tylerwade.backend.config.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import net.tylerwade.backend.dto.APIResponse;
-import net.tylerwade.backend.dto.LoginRequest;
-import net.tylerwade.backend.dto.UserDTO;
+import net.tylerwade.backend.model.dto.APIResponse;
+import net.tylerwade.backend.model.dto.LoginRequest;
+import net.tylerwade.backend.model.dto.UserDTO;
 import net.tylerwade.backend.model.SecurityUser;
 import net.tylerwade.backend.services.UserService;
 import net.tylerwade.backend.services.util.JwtUtil;

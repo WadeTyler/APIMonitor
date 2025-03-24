@@ -1,4 +1,4 @@
-package net.tylerwade.backend.dto.alert;
+package net.tylerwade.backend.model.dto.alert;
 
 public class AddAlertFieldsRequest {
 

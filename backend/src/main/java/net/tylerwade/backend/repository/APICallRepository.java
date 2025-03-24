@@ -1,7 +1,7 @@
 package net.tylerwade.backend.repository;
 
 import jakarta.transaction.Transactional;
-import net.tylerwade.backend.entity.APICall;
+import net.tylerwade.backend.model.entity.APICall;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

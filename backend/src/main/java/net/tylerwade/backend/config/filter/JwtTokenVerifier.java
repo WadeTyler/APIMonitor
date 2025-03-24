@@ -6,7 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.tylerwade.backend.config.properties.JwtConfig;
-import net.tylerwade.backend.dto.APIResponse;
+import net.tylerwade.backend.model.dto.APIResponse;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.model.SecurityUser;
 import net.tylerwade.backend.services.UserService;

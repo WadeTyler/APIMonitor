@@ -1,11 +1,11 @@
 package net.tylerwade.backend.services;
 
 import net.tylerwade.backend.config.properties.VaxProperties;
-import net.tylerwade.backend.dto.ApplicationDTO;
-import net.tylerwade.backend.dto.CreateApplicationRequest;
-import net.tylerwade.backend.dto.MethodCount;
-import net.tylerwade.backend.dto.UpdateApplicationRequest;
-import net.tylerwade.backend.entity.Application;
+import net.tylerwade.backend.model.dto.ApplicationDTO;
+import net.tylerwade.backend.model.dto.CreateApplicationRequest;
+import net.tylerwade.backend.model.dto.MethodCount;
+import net.tylerwade.backend.model.dto.UpdateApplicationRequest;
+import net.tylerwade.backend.model.entity.Application;
 import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;

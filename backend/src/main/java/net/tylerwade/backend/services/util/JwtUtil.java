@@ -8,7 +8,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import net.tylerwade.backend.config.properties.ApplicationProperties;
 import net.tylerwade.backend.config.properties.JwtConfig;
-import net.tylerwade.backend.entity.BlacklistedJwt;
+import net.tylerwade.backend.model.entity.BlacklistedJwt;
 
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.repository.BlacklistedJwtRepository;

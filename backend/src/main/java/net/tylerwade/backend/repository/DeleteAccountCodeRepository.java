@@ -1,6 +1,6 @@
 package net.tylerwade.backend.repository;
 
-import net.tylerwade.backend.entity.DeleteAccountVerificationCode;
+import net.tylerwade.backend.model.entity.DeleteAccountVerificationCode;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

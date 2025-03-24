@@ -1,9 +1,11 @@
 package net.tylerwade.backend.services;
 
-import net.tylerwade.backend.dto.alert.AddAlertFieldsRequest;
-import net.tylerwade.backend.entity.*;
-import net.tylerwade.backend.entity.alert.AlertConfig;
-import net.tylerwade.backend.entity.alert.AlertField;
+import net.tylerwade.backend.model.dto.alert.AddAlertFieldsRequest;
+import net.tylerwade.backend.model.entity.APICall;
+import net.tylerwade.backend.model.entity.Application;
+import net.tylerwade.backend.model.entity.User;
+import net.tylerwade.backend.model.entity.alert.AlertConfig;
+import net.tylerwade.backend.model.entity.alert.AlertField;
 import net.tylerwade.backend.repository.AlertConfigRepository;
 import net.tylerwade.backend.repository.ApplicationRepository;
 import net.tylerwade.backend.repository.UserRepository;

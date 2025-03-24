@@ -1,4 +1,4 @@
-package net.tylerwade.backend.dto;
+package net.tylerwade.backend.model.dto;
 
 public class UpdateApplicationRequest {
     private String name;

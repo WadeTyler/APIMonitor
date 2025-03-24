@@ -1,4 +1,4 @@
-package net.tylerwade.backend.entity;
+package net.tylerwade.backend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;

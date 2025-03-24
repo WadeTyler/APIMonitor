@@ -1,11 +1,11 @@
 package net.tylerwade.backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import net.tylerwade.backend.dto.APIResponse;
-import net.tylerwade.backend.dto.alert.AddAlertFieldsRequest;
-import net.tylerwade.backend.entity.alert.AlertConfig;
-import net.tylerwade.backend.entity.Application;
-import net.tylerwade.backend.entity.User;
+import net.tylerwade.backend.model.dto.APIResponse;
+import net.tylerwade.backend.model.dto.alert.AddAlertFieldsRequest;
+import net.tylerwade.backend.model.entity.alert.AlertConfig;
+import net.tylerwade.backend.model.entity.Application;
+import net.tylerwade.backend.model.entity.User;
 import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.services.AlertService;
