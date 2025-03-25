@@ -11,7 +11,7 @@ import net.tylerwade.backend.config.properties.JwtConfig;
 import net.tylerwade.backend.model.entity.BlacklistedJwt;
 
 import net.tylerwade.backend.exceptions.UnauthorizedException;
-import net.tylerwade.backend.repository.BlacklistedJwtRepository;
+import net.tylerwade.backend.repository.redis.BlacklistedJwtRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

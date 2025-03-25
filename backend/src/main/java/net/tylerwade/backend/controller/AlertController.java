@@ -3,6 +3,7 @@ package net.tylerwade.backend.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import net.tylerwade.backend.model.dto.APIResponse;
 import net.tylerwade.backend.model.dto.alert.AddAlertFieldsRequest;
+import net.tylerwade.backend.model.entity.alert.Alert;
 import net.tylerwade.backend.model.entity.alert.AlertConfig;
 import net.tylerwade.backend.model.entity.Application;
 import net.tylerwade.backend.model.entity.User;
@@ -15,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/alerts")
 public class AlertController {
@@ -25,6 +28,31 @@ public class AlertController {
     public AlertController(AlertService alertService, ApplicationService applicationService) {
         this.alertService = alertService;
         this.applicationService = applicationService;
+    }
+
+    @GetMapping({"", "/"})
+    public ResponseEntity<?> getAlertsInApplication(HttpServletRequest request, @RequestHeader String appId) {
+        try {
+            User user = (User) request.getAttribute("user");
+
+            List<Alert> alerts = alertService.getAlertsInApplication(appId, user.getId());
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(alerts, "Alerts Retrieved Successfully."));
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping({"", "/"})
+    public ResponseEntity<?> clearAlertsInApplication(HttpServletRequest request, @RequestHeader String appId) {
+        try {
+            User user = (User) request.getAttribute("user");
+            alertService.clearAlertsInApplication(appId, user.getId());
+
+            return ResponseEntity.status(HttpStatus.OK).body(APIResponse.success(null, "Alerts in application cleared."));
+        } catch (BadRequestException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(APIResponse.error(e.getMessage()));
+        }
     }
 
     @GetMapping("/config")

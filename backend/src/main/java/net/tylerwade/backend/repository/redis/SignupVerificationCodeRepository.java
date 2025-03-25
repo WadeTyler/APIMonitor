@@ -1,4 +1,4 @@
-package net.tylerwade.backend.repository;
+package net.tylerwade.backend.repository.redis;
 
 import net.tylerwade.backend.model.entity.SignupVerificationCode;
 import org.springframework.data.repository.CrudRepository;

@@ -1,12 +1,14 @@
 package net.tylerwade.backend.model.entity.alert;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AlertField {
 
     @Id
@@ -61,14 +63,4 @@ public class AlertField {
         this.remoteAddress = remoteAddress;
     }
 
-    @Override
-    public String toString() {
-        return "AlertField{" +
-                "id=" + id +
-                ", path='" + path + '\'' +
-                ", method='" + method + '\'' +
-                ", responseStatus=" + responseStatus +
-                ", remoteAddress='" + remoteAddress + '\'' +
-                '}';
-    }
 }

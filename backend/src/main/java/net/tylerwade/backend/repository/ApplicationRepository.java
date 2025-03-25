@@ -25,6 +25,8 @@ public interface ApplicationRepository extends JpaRepository<Application, String
 
     Optional<Application> findByPublicToken(String publicToken);
 
+    Optional<Application> findByIdAndUserId(String appId, String userId);
+
 
 
 }

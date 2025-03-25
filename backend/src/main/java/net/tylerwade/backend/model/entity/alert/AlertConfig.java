@@ -13,11 +13,9 @@ public class AlertConfig {
     private Long id;
     private String appId;
 
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "alert_config_id") // Foreign key stored in AlertFields
     private List<AlertField> alertFields = new ArrayList<>();
-
 
     public AlertConfig() {
     }

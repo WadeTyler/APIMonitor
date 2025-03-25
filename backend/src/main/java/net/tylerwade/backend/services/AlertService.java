@@ -4,12 +4,17 @@ import net.tylerwade.backend.model.dto.alert.AddAlertFieldsRequest;
 import net.tylerwade.backend.model.entity.APICall;
 import net.tylerwade.backend.model.entity.Application;
 import net.tylerwade.backend.model.entity.User;
+import net.tylerwade.backend.model.entity.alert.Alert;
 import net.tylerwade.backend.model.entity.alert.AlertConfig;
 import net.tylerwade.backend.model.entity.alert.AlertField;
+import net.tylerwade.backend.model.entity.alert.RecentlySentAppAlerts;
 import net.tylerwade.backend.repository.AlertConfigRepository;
+import net.tylerwade.backend.repository.AlertRepository;
 import net.tylerwade.backend.repository.ApplicationRepository;
 import net.tylerwade.backend.repository.UserRepository;
+import net.tylerwade.backend.repository.redis.RecentlySentAppAlertsRepository;
 import org.apache.coyote.BadRequestException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,13 +27,38 @@ public class AlertService {
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
     private final AlertConfigRepository alertConfigRepo;
+    private final AlertRepository alertRepo;
+    private final RecentlySentAppAlertsRepository recentlySentAppAlertsRepo;
 
-    public AlertService(EmailService emailService, UserRepository userRepository, ApplicationRepository applicationRepository, AlertConfigRepository alertConfigRepo) {
+    @Autowired
+    public AlertService(EmailService emailService, UserRepository userRepository, ApplicationRepository applicationRepository, AlertConfigRepository alertConfigRepo, AlertRepository alertRepo, RecentlySentAppAlertsRepository recentlySentAppAlertsRepo) {
         this.emailService = emailService;
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.alertConfigRepo = alertConfigRepo;
+        this.alertRepo = alertRepo;
+        this.recentlySentAppAlertsRepo = recentlySentAppAlertsRepo;
     }
+
+    /// ALERTS
+
+    public List<Alert> getAlertsInApplication(String appId, String userId) throws BadRequestException {
+        Application app = applicationRepository.findByIdAndUserId(appId, userId)
+                .orElseThrow(() -> new BadRequestException("Invalid appId."));
+
+        return alertRepo.findByAppId(app.getId());
+    }
+
+    public void clearAlertsInApplication(String appId, String userId) throws BadRequestException {
+        Application app = applicationRepository.findByIdAndUserId(appId, userId)
+                .orElseThrow(() -> new BadRequestException("Invalid appId."));
+
+        alertRepo.deleteAlertsByAppId(app.getId());
+    }
+
+    ///
+    ///  ALERT CONFIGS
+    ///
 
     public AlertConfig getOrCreateAlertConfig(String appId) {
         Optional<AlertConfig> alertConfigOptional = alertConfigRepo.findByAppId(appId);
@@ -42,31 +72,6 @@ public class AlertService {
         }
     }
 
-    public void sendAlerts(APICall apiCall) {
-        // Find User
-        Optional<User> userOptional = userRepository.findByAppId(apiCall.getAppId());
-        if (userOptional.isEmpty()) return;
-        User user = userOptional.get();
-
-        // Find Alert Config
-        Optional<AlertConfig> alertConfigOptional = alertConfigRepo.findByAppId(apiCall.getAppId());
-        if (alertConfigOptional.isEmpty()) return;
-        AlertConfig config = alertConfigOptional.get();
-
-        Optional<Application> appOptional = applicationRepository.findById(apiCall.getAppId());
-        if (appOptional.isEmpty()) return;
-        Application app = appOptional.get();
-
-        // Check all fields
-        for (AlertField alertField : config.getAlertFields()) {
-            if (checkFieldMatch(alertField, apiCall)) {
-                String message = "A configured alert field has been triggered for '" + app.getName() + "'.\n\nCONFIGURED FIELD: " + alertField + "\n\nAPI CALL: " + apiCall;
-                System.out.println("Sending email.");
-                emailService.sendSimpleMessage(user.getEmail(), "API Alert | Vax Monitor", message);
-                System.out.println("Email Sent.");
-            }
-        }
-    }
 
     private boolean checkFieldMatch(AlertField field, APICall apiCall) {
 
@@ -140,10 +145,49 @@ public class AlertService {
         return config;
     }
 
+    /// SEND ALERTS
+
+    public void sendAlerts(APICall apiCall) {
+
+        // Find User
+        Optional<User> userOptional = userRepository.findByAppId(apiCall.getAppId());
+        if (userOptional.isEmpty()) return;
+        User user = userOptional.get();
+
+        // Find Alert Config
+        Optional<AlertConfig> alertConfigOptional = alertConfigRepo.findByAppId(apiCall.getAppId());
+        if (alertConfigOptional.isEmpty()) return;
+        AlertConfig config = alertConfigOptional.get();
+
+        Optional<Application> appOptional = applicationRepository.findById(apiCall.getAppId());
+        if (appOptional.isEmpty()) return;
+        Application app = appOptional.get();
+
+        // Check all fields
+        for (AlertField alertField : config.getAlertFields()) {
+            if (checkFieldMatch(alertField, apiCall)) {
+                // Add to alerts
+                alertRepo.save(new Alert(app, alertField, apiCall));
+
+                // If we've sent an alert email in the last 10 minutes, just return.
+                if (recentlySentAppAlertsRepo.existsById(apiCall.getAppId())) {
+                    return;
+                }
+
+                String message = "An alert has been triggered for your application: " + app.getName();
+                System.out.println("Sending email.");
+                emailService.sendSimpleMessage(user.getEmail(), "API Alert | Vax Monitor", message);
+                System.out.println("Email Sent.");
+
+                // Add to recently sent alerts
+                recentlySentAppAlertsRepo.save(new RecentlySentAppAlerts(app.getId()));
+
+                break;
+            }
+        }
+    }
+
 }
-
-
-
 
 
 
