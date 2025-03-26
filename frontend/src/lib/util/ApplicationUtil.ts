@@ -63,7 +63,7 @@ export async function fetchApplicationFromPublicToken(publicToken: string) {
 
     return apiResponse.data;
   } catch (e) {
-    console.error("Error fetching Application: ", (e as Error).message || "Failed to fetch application.");
+    console.log("Error fetching Application: ", (e as Error).message || "Failed to fetch application.");
     return null;
   }
 }

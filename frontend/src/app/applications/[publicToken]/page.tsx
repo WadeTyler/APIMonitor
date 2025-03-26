@@ -103,7 +103,9 @@ const Page = () => {
   }
 
   if (!currentApplication && !isLoadingCurrentApplication) {
-    return <NotFound/>
+    return <AuthProvider>
+      <NotFound/>
+    </AuthProvider>
   }
 
   return (

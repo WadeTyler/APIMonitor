@@ -12,6 +12,7 @@ import AlertFieldPanel from "@/components/alerts/AlertFieldPanel";
 import AddAlertFieldPanel from "@/components/alerts/AddAlertFieldPanel";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import NotFound from "@/app/not-found";
 
 const Page = () => {
   // Params
@@ -84,6 +85,12 @@ const Page = () => {
   // Returns
 
   if (isLoadingCurrentApplication || isLoadingAlertConfig) return <LoadingScreen/>
+
+  if (!currentApplication && !isLoadingCurrentApplication) {
+    return <AuthProvider>
+      <NotFound/>
+    </AuthProvider>
+  }
 
   return (
     <AuthProvider>

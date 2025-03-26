@@ -3,12 +3,14 @@ import React, {useState} from 'react';
 import {RiLoginCircleLine} from "@remixicon/react";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {attemptLogin} from "@/lib/util/AuthUtil";
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import NotAuthProvider from "@/components/providers/NotAuthProvider";
 import Link from "next/link";
 
 const Page = () => {
+  // Navigation
   const router = useRouter();
+  const searchParams = useSearchParams(); // 'continueTo' is used to navigate to after success. If there is no continueTo then it will go to 'applications'
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +25,7 @@ const Page = () => {
     mutationFn: attemptLogin,
     onSuccess: () => {
       refreshAuthUser();
-      router.push('/applications');
+      router.push(searchParams.get('continueTo') || '/applications');
     }
   });
 
@@ -32,7 +34,7 @@ const Page = () => {
   }
 
   return (
-    <NotAuthProvider>
+    <NotAuthProvider redirectTo={searchParams.get('continueTo') || '/applications'}>
       <div className="w-full min-h-screen flex items-center justify-center page-padding">
 
         <form

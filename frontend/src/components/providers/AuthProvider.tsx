@@ -3,7 +3,7 @@ import React, {useEffect} from 'react';
 import {useQuery} from "@tanstack/react-query";
 import {User} from "@/types/AuthTypes";
 import {fetchAuthUser} from "@/lib/util/AuthUtil";
-import {useRouter} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import Loader from "@/components/util/Loader";
 
 const AuthProvider = ({children, redirectTo = "/login"}: {
@@ -12,6 +12,7 @@ const AuthProvider = ({children, redirectTo = "/login"}: {
 }) => {
 
   const router = useRouter();
+  const pathname = usePathname();
 
   const {data: authUser, isPending: loadingAuth} = useQuery<User | undefined | null>({
     queryKey: ['authUser'],
@@ -21,9 +22,13 @@ const AuthProvider = ({children, redirectTo = "/login"}: {
 
   useEffect(() => {
     if (!loadingAuth && !authUser) {
-      router.push(redirectTo);
+      if (redirectTo === "/login") {
+        router.push(`/login?continueTo=${pathname.substring(1)}`)
+      } else {
+        router.push(redirectTo);
+      }
     }
-  }, [loadingAuth, authUser, !authUser]);
+  }, [loadingAuth, authUser, redirectTo, router, pathname]);
 
   if (loadingAuth) {
     return (

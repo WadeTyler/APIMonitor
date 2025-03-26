@@ -11,6 +11,7 @@ import ApplicationInfoBar from "@/components/ApplicationInfoBar";
 import {RiAlertLine, RiResetRightLine} from "@remixicon/react";
 import AlertRow from "@/components/alerts/AlertRow";
 import Pagination from "@/components/Pagination";
+import NotFound from "@/app/not-found";
 
 const Page = () => {
   // Params
@@ -65,6 +66,12 @@ const Page = () => {
   // Returns
 
   if (isLoadingCurrentApplication || isLoadingAlerts) return <LoadingScreen/>
+
+  if (!currentApplication && !isLoadingCurrentApplication) {
+    return <AuthProvider>
+      <NotFound/>
+    </AuthProvider>
+  }
 
   if (currentApplication) return (
     <AuthProvider>
