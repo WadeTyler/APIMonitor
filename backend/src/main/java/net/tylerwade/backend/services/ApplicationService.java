@@ -10,8 +10,10 @@ import net.tylerwade.backend.exceptions.NotAcceptableException;
 import net.tylerwade.backend.exceptions.NotFoundException;
 import net.tylerwade.backend.exceptions.UnauthorizedException;
 import net.tylerwade.backend.repository.APICallRepository;
+import net.tylerwade.backend.repository.AlertRepository;
 import net.tylerwade.backend.repository.ApplicationRepository;
 import org.apache.coyote.BadRequestException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,11 +24,14 @@ import java.util.Optional;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
+    private final AlertRepository alertRepository;
     private final APICallRepository apiCallRepository;
     private final VaxProperties vaxProperties;
 
-    public ApplicationService(ApplicationRepository applicationRepository, APICallRepository apiCallRepository, VaxProperties vaxProperties) {
+    @Autowired
+    public ApplicationService(ApplicationRepository applicationRepository, AlertRepository alertRepository, APICallRepository apiCallRepository, VaxProperties vaxProperties) {
         this.applicationRepository = applicationRepository;
+        this.alertRepository = alertRepository;
         this.apiCallRepository = apiCallRepository;
         this.vaxProperties = vaxProperties;
     }
@@ -120,6 +125,10 @@ public class ApplicationService {
         return apiCallRepository.countDistinctAPICallByRemoteAddressAndAppIdEquals(appId);
     }
 
+    public Long getTotalAlerts(String appId) {
+        return alertRepository.countDistinctByAppId(appId);
+    }
+
     public String[] getUniquePaths(String appId) {
         return apiCallRepository.findDistinctPathByAppId(appId);
     }
@@ -145,6 +154,7 @@ public class ApplicationService {
                 application.getUserId(),
                 getTotalAPICalls(application.getId()),
                 getTotalUniqueRemoteAddr(application.getId()),
+                getTotalAlerts(application.getId()),
                 getUniquePaths(application.getId()),
                 getMethodCounts(application.getId())
         );

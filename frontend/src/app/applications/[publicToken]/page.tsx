@@ -6,6 +6,7 @@ import AuthProvider from "@/components/providers/AuthProvider";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {fetchApplicationFromPublicToken} from "@/lib/util/ApplicationUtil";
 import {
+  RiAlertLine,
   RiEdit2Line,
   RiResetRightLine, RiSearchLine, RiSortAsc, RiSortDesc,
 } from "@remixicon/react";
@@ -20,6 +21,7 @@ import {debounce} from "next/dist/server/utils";
 import toast from "react-hot-toast";
 import GoTopButton from "@/components/GoTopButton";
 import EditApplicationPanel from "@/components/EditApplicationPanel";
+import Link from "next/link";
 
 
 const Page = () => {
@@ -114,6 +116,12 @@ const Page = () => {
             <span className="text-xl font-semibold text-dark">API Request Monitor</span>
 
             <div className="inline-flex items-center gap-8">
+
+              <Link href={`/applications/${params.publicToken}/alerts`} className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer inline-flex gap-1 items-center">
+                <RiAlertLine />
+                <span>Alerts</span>
+              </Link>
+
               <button
                 className="text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer inline-flex gap-1 items-center"
                 onClick={() => setIsEditingApplicationDetails(prev => !prev)}
@@ -242,7 +250,7 @@ const Page = () => {
           </div>
 
           {page && <Pagination currentPageNum={currentPageNum} setCurrentPageNum={setCurrentPageNum}
-                               totalPages={page.totalPages}/>}
+                               totalPages={page.totalPages} totalElements={page.totalElements} />}
 
           {/* Scroll up button for small displays */}
           <GoTopButton />

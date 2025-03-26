@@ -9,7 +9,7 @@ const ConfirmPanel = ({title, description, confirmText, confirm, cancelText, can
   cancel: () => void;
 }) => {
   return (
-    <div className="fixed top-0 left-0 w-full h-screen bg-black/50 flex items-center justify-center">
+    <div className="fixed top-0 left-0 w-full h-screen bg-black/50 flex items-center justify-center z-40">
 
       <div className="max-w-[30rem] overflow-hidden bg-white shadow-md rounded-md flex flex-col gap-4">
         <h5 className="text-primary text-xl px-4 pt-4">{title}</h5>

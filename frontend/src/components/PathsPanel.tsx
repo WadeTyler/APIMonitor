@@ -4,10 +4,12 @@ import CloseButton from "@/components/util/CloseButton";
 const PathsPanel = ({paths, close, searchForValue}: {
   paths: string[];
   close: () => void;
-  searchForValue: (value: string) => Promise<void>;
+  searchForValue?: (value: string) => Promise<void>;
 }) => {
 
   async function searchForPath(path: string) {
+    if (!searchForValue) return;
+
     await searchForValue(path);
     close();
   }

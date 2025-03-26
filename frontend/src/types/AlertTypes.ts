@@ -11,13 +11,14 @@ export type AlertField = {
 export type AddAlertFieldRequest = {
   path?: string;
   method?: string;
-  responseStatus?: number;
+  responseStatus?: number | string;
   remoteAddress?: string;
 }
 
 export interface AlertConfig {
   id: number;
   appId: string;
+  emailAlertsEnabled: boolean;
   alertFields: AlertField[];
 }
 

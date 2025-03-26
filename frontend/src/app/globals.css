@@ -45,6 +45,11 @@ html, body {
   @apply cursor-pointer inline-flex gap-2 items-center justify-center bg-primary text-light rounded-md px-2 py-1 font-semibold shadow-md hover:shadow-lg hover:bg-primary-dark duration-200 w-full;
 }
 
+.dashboard-btn {
+  @apply text-primary p-1 rounded-md hover:bg-dark duration-200 cursor-pointer inline-flex gap-1 items-center;
+}
+
+
 .page-padding {
   @apply lg:p-16 lg:pt-32 md:p-8 md:pt-24 p-4 pt-20;
 }
@@ -63,4 +68,8 @@ html, body {
 
 .form-container {
   @apply w-full bg-white rounded-md shadow-lg lg:p-8 p-4 flex flex-col lg:gap-8 gap-4;
+}
+
+.app-link {
+  @apply text-primary cursor-pointer hover:underline duration-200 hover:text-primary-dark;
 }

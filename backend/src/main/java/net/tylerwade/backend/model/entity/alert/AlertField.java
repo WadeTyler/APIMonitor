@@ -1,11 +1,11 @@
 package net.tylerwade.backend.model.entity.alert;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
+import java.util.List;
 
 @Entity
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -19,6 +19,10 @@ public class AlertField {
     private String method;
     private Integer responseStatus;
     private String remoteAddress;
+
+    @OneToMany(mappedBy = "alertField", orphanRemoval = true)
+    @JsonIgnore
+    private List<Alert> alerts;
 
     public AlertField() {
     }
@@ -63,4 +67,12 @@ public class AlertField {
         this.remoteAddress = remoteAddress;
     }
 
+
+    public List<Alert> getAlerts() {
+        return alerts;
+    }
+
+    public void setAlerts(List<Alert> alerts) {
+        this.alerts = alerts;
+    }
 }

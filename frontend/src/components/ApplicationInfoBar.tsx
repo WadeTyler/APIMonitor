@@ -1,6 +1,7 @@
 'use client';
 import React, {useState} from 'react';
 import {
+  RiAlertLine,
   RiAppStoreLine,
   RiClipboardLine, RiEyeLine,
   RiFingerprintLine, RiInputMethodLine,
@@ -13,7 +14,7 @@ import PathsPanel from "@/components/PathsPanel";
 
 const ApplicationInfoBar = ({currentApplication, searchForValue}: {
   currentApplication: Application;
-  searchForValue: (value: string) => Promise<void>;
+  searchForValue?: (value: string) => Promise<void>;
 }) => {
 
   // States
@@ -86,19 +87,26 @@ const ApplicationInfoBar = ({currentApplication, searchForValue}: {
           <span className="text-foreground">{currentApplication.totalAPICalls}</span>
         </section>
 
+        {/* Total Alerts */}
+        <section className="inline-flex gap-2 font-semibold items-center">
+          <RiAlertLine />
+          <span className="text-secondary">Total Alerts:</span>
+          <span className="text-foreground">{currentApplication.totalAlerts}</span>
+        </section>
+      </div>
+
+      <div className="flex flex-col gap-1 lg:text-base text-xs">
         {/* Total Paths */}
         <section className="inline-flex gap-2 font-semibold items-center">
           <RiRouteLine/>
-          <span className="text-secondary">Total Paths:</span>
+          <span className="text-secondary">Unique Paths:</span>
           <span className="text-foreground">{currentApplication.uniquePaths?.length}</span>
           <RiEyeLine
             className="lg:text-base text-xs p-1 text-light bg-dark rounded-md relative cursor-pointer hover:bg-primary-dark duration-200"
             onClick={() => setShowPaths(prev => !prev)}
           />
         </section>
-      </div>
 
-      <div className="flex flex-col gap-1 lg:text-base text-xs">
         <section className="inline-flex gap-2 font-semibold items-center">
           <RiInputMethodLine/>
           <span className="text-secondary">Method Counts:</span>
@@ -112,7 +120,7 @@ const ApplicationInfoBar = ({currentApplication, searchForValue}: {
           >
             <span
               className="text-secondary hover:text-primary hover:underline duration-200 cursor-pointer"
-              onClick={() => searchForValue(methodCount.method)}
+              onClick={() => searchForValue && searchForValue(methodCount.method)}
             >
               {methodCount.method}
             </span>

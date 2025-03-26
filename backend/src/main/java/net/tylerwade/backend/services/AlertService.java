@@ -15,6 +15,8 @@ import net.tylerwade.backend.repository.UserRepository;
 import net.tylerwade.backend.repository.redis.RecentlySentAppAlertsRepository;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,11 +44,13 @@ public class AlertService {
 
     /// ALERTS
 
-    public List<Alert> getAlertsInApplication(String appId, String userId) throws BadRequestException {
+    // TODO: Convert to pageable
+    public Page<Alert> getAlertsInApplication(String appId, String userId, Pageable pageable) throws BadRequestException {
+
         Application app = applicationRepository.findByIdAndUserId(appId, userId)
                 .orElseThrow(() -> new BadRequestException("Invalid appId."));
 
-        return alertRepo.findByAppId(app.getId());
+        return alertRepo.findByAppId(app.getId(), pageable);
     }
 
     public void clearAlertsInApplication(String appId, String userId) throws BadRequestException {
@@ -60,11 +64,12 @@ public class AlertService {
     ///  ALERT CONFIGS
     ///
 
-    public AlertConfig getOrCreateAlertConfig(String appId) {
-        Optional<AlertConfig> alertConfigOptional = alertConfigRepo.findByAppId(appId);
+    public AlertConfig getOrCreateAlertConfig(Application app) {
+
+        Optional<AlertConfig> alertConfigOptional = alertConfigRepo.findByApp(app);
         if (alertConfigOptional.isEmpty()) {
             // Create a new Config
-            AlertConfig config = new AlertConfig(appId);
+            AlertConfig config = new AlertConfig(app);
             alertConfigRepo.save(config);
             return config;
         } else {
@@ -95,13 +100,13 @@ public class AlertService {
         return true;
     }
 
-    public AlertConfig addFieldToAlertConfig(AddAlertFieldsRequest request, String appId) throws BadRequestException {
+    public AlertField addFieldToAlertConfig(AddAlertFieldsRequest request, Application app) throws BadRequestException {
         // Check for at least one field
         if (request.getPath() == null && request.getMethod() == null && request.getRemoteAddress() == null && request.getResponseStatus() == null) {
             throw new BadRequestException("At least one field required: Path, Method, Remote Address, Response Status");
         }
 
-        AlertConfig config = getOrCreateAlertConfig(appId);
+        AlertConfig config = getOrCreateAlertConfig(app);
         List<AlertField> alertFields = config.getAlertFields();
 
         AlertField newAlertField = new AlertField();
@@ -127,15 +132,14 @@ public class AlertService {
         config.setAlertFields(alertFields);
         alertConfigRepo.save(config);
 
-        return config;
+        return newAlertField;
     }
 
-    public AlertConfig removeFieldFromAlertConfig(Long alertFieldsId, String appId) throws BadRequestException {
+    public AlertConfig removeFieldFromAlertConfig(Long alertFieldsId, Application app) throws BadRequestException {
         // Check if null
         if (alertFieldsId == null) throw new BadRequestException("Alert Fields ID is required.");
 
-
-        AlertConfig config = getOrCreateAlertConfig(appId);
+        AlertConfig config = getOrCreateAlertConfig(app);
 
         // Filter out ID
         config.getAlertFields().removeIf(field -> field.getId().equals(alertFieldsId));
@@ -147,6 +151,15 @@ public class AlertService {
 
     /// SEND ALERTS
 
+    public boolean toggleEmailAlerts(String appId, String userId) throws BadRequestException {
+        AlertConfig config = alertConfigRepo.findByAppIdAndUserId(appId, userId)
+                .orElseThrow(() -> new BadRequestException("Invalid appId."));
+
+        config.setEmailAlertsEnabled(!config.isEmailAlertsEnabled());
+        alertConfigRepo.save(config);
+        return config.isEmailAlertsEnabled();
+    }
+
     public void sendAlerts(APICall apiCall) {
 
         // Find User
@@ -155,7 +168,7 @@ public class AlertService {
         User user = userOptional.get();
 
         // Find Alert Config
-        Optional<AlertConfig> alertConfigOptional = alertConfigRepo.findByAppId(apiCall.getAppId());
+        Optional<AlertConfig> alertConfigOptional = alertConfigRepo.findByAppIdAndUserId(apiCall.getAppId(), user.getId());
         if (alertConfigOptional.isEmpty()) return;
         AlertConfig config = alertConfigOptional.get();
 
@@ -169,20 +182,16 @@ public class AlertService {
                 // Add to alerts
                 alertRepo.save(new Alert(app, alertField, apiCall));
 
-                // If we've sent an alert email in the last 10 minutes, just return.
-                if (recentlySentAppAlertsRepo.existsById(apiCall.getAppId())) {
-                    return;
+                // If we haven't sent an alert email in the last 10 minutes, send one.
+                if (config.isEmailAlertsEnabled() && !recentlySentAppAlertsRepo.existsById(apiCall.getAppId())) {
+                    String message = "An alert has been triggered for your application: " + app.getName();
+                    System.out.println("Sending email.");
+                    emailService.sendSimpleMessage(user.getEmail(), "API Alert | Vax Monitor", message);
+                    System.out.println("Email Sent.");
+
+                    // Add to recently sent alerts
+                    recentlySentAppAlertsRepo.save(new RecentlySentAppAlerts(app.getId()));
                 }
-
-                String message = "An alert has been triggered for your application: " + app.getName();
-                System.out.println("Sending email.");
-                emailService.sendSimpleMessage(user.getEmail(), "API Alert | Vax Monitor", message);
-                System.out.println("Email Sent.");
-
-                // Add to recently sent alerts
-                recentlySentAppAlertsRepo.save(new RecentlySentAppAlerts(app.getId()));
-
-                break;
             }
         }
     }

@@ -7,6 +7,7 @@ export type Application = {
   name: string;
   totalAPICalls?: number;
   totalUniqueRemoteAddr?: number;
+  totalAlerts?: number;
   uniquePaths?: string[];
   methodCounts?: MethodCount[];
 }

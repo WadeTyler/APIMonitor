@@ -9,16 +9,19 @@ public class ApplicationDTO {
 
     private Long totalAPICalls;
     private Long totalUniqueRemoteAddr;
+    private Long totalAlerts;
+
     private String[] uniquePaths;
     private MethodCount[] methodCounts;
 
-    public ApplicationDTO(String id, String publicToken, String name, String userId, Long totalAPICalls, Long totalUniqueRemoteAddr, String[] uniquePaths, MethodCount[] methodCounts) {
+    public ApplicationDTO(String id, String publicToken, String name, String userId, Long totalAPICalls, Long totalUniqueRemoteAddr, Long totalAlerts, String[] uniquePaths, MethodCount[] methodCounts) {
         this.id = id;
         this.publicToken = publicToken;
         this.name = name;
         this.userId = userId;
         this.totalAPICalls = totalAPICalls;
         this.totalUniqueRemoteAddr = totalUniqueRemoteAddr;
+        this.totalAlerts = totalAlerts;
         this.uniquePaths = uniquePaths;
         this.methodCounts = methodCounts;
     }
@@ -85,5 +88,13 @@ public class ApplicationDTO {
 
     public void setMethodCounts(MethodCount[] methodCounts) {
         this.methodCounts = methodCounts;
+    }
+
+    public Long getTotalAlerts() {
+        return totalAlerts;
+    }
+
+    public void setTotalAlerts(Long totalAlerts) {
+        this.totalAlerts = totalAlerts;
     }
 }
